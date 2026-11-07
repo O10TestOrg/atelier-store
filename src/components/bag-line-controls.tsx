@@ -3,6 +3,7 @@
 import { useId, useOptimistic, useState, useTransition } from "react";
 import { removeFromCart, updateQuantity } from "@/app/bag/actions";
 import { notifyCartChange } from "@/components/bag-count";
+import { SignalMessage } from "@/components/signal";
 
 type Props = {
   slug: string;
@@ -72,9 +73,9 @@ export function BagLineControls({ slug, name, quantity, maxQuantity }: Props) {
         </button>
       </div>
       {error && (
-        <p role="alert" className="mt-2 text-caption text-danger">
+        <SignalMessage tone="danger" size="caption" role="alert" className="mt-2">
           {error}
-        </p>
+        </SignalMessage>
       )}
     </div>
   );

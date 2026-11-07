@@ -6,6 +6,7 @@ import { addToCart } from "@/app/bag/actions";
 import { clearWishlist, moveToBag, removeFromWishlist } from "@/app/wishlist/actions";
 import { notifyCartChange } from "@/components/bag-count";
 import { notifyWishlistChange } from "@/components/wishlist-state";
+import { SignalMessage } from "@/components/signal";
 
 type Message = { ok: boolean; text: string; toBag: boolean };
 
@@ -84,9 +85,10 @@ export function WishlistItemControls({
         </button>
       </div>
       {message && (
-        <p
+        <SignalMessage
+          tone={message.ok ? "success" : "danger"}
+          size="caption"
           role={message.ok ? "status" : "alert"}
-          className={`text-caption ${message.ok ? "" : "text-danger"}`}
         >
           {message.text}
           {message.ok && message.toBag && (
@@ -97,7 +99,7 @@ export function WishlistItemControls({
               </Link>
             </>
           )}
-        </p>
+        </SignalMessage>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import type { CartActionResult } from "@/app/bag/actions";
 import { startCheckout } from "@/app/checkout/actions";
 import { notifyCartChange } from "@/components/bag-count";
+import { SignalMessage } from "@/components/signal";
 
 // `expectedTotal` is what the bag shows. The server re-prices from the
 // database and only uses it to refuse a total the shopper didn't see.
@@ -33,16 +34,17 @@ export function CheckoutButton({ expectedTotal }: { expectedTotal: number }) {
         )}
         {pending ? "Redirecting to payment…" : "Checkout"}
       </button>
-      <p
+      <SignalMessage
+        tone={unavailable ? "info" : "danger"}
         role="status"
-        className={`text-body-sm empty:-mt-3 ${unavailable ? "text-muted" : "text-danger"}`}
+        className="empty:-mt-3"
       >
         {unavailable
           ? "Nothing in your bag is in stock right now."
           : result && !result.ok
             ? result.message
             : null}
-      </p>
+      </SignalMessage>
       {!unavailable && !(result && !result.ok) && (
         <p className="text-meta">You’ll pay securely on Stripe. Your pieces are held for 30 minutes.</p>
       )}

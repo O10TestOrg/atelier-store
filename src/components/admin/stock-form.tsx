@@ -4,6 +4,7 @@ import { startTransition, useActionState, useId, type FormEvent } from "react";
 import type { StockActionResult } from "@/app/admin/products/actions";
 import { Spinner } from "@/components/admin/fields";
 import { PRODUCT_LIMITS } from "@/lib/product-form";
+import { SignalMessage } from "@/components/signal";
 
 type Props = {
   action: (previous: StockActionResult, formData: FormData) => Promise<StockActionResult>;
@@ -60,13 +61,15 @@ export function StockForm({ action, stock, productName, layout = "inline" }: Pro
           {pending ? "Saving…" : inline ? "Set" : "Update stock"}
         </button>
       </div>
-      <p
+      <SignalMessage
         id={`${id}-status`}
+        tone={result?.ok ? "success" : "danger"}
+        size="caption"
         role="status"
-        className={`mt-1 text-caption empty:hidden ${result?.ok ? "text-muted" : "text-danger"}`}
+        className="mt-1 empty:hidden"
       >
         {result?.message}
-      </p>
+      </SignalMessage>
     </form>
   );
 }

@@ -23,7 +23,7 @@ export function StockStatus({ product }: { product: Product }) {
     <p className="flex items-center gap-2 text-body-sm">
       <span
         aria-hidden="true"
-        className={`size-2 rounded-pill ${dotClass[getStockState(product)]}`}
+        className={`size-2 rounded-pill transition-colors ${dotClass[getStockState(product)]}`}
       />
       {stockLabel(product)}
     </p>

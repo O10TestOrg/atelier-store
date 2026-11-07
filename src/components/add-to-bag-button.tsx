@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { addToCart, type CartActionResult } from "@/app/bag/actions";
 import { notifyCartChange } from "@/components/bag-count";
+import { SignalMessage } from "@/components/signal";
 
 // Stock is re-checked on the server, so a stale "In stock" on the cached
 // product page still can't add more than is available.
@@ -28,9 +29,10 @@ export function AddToBagButton({ slug }: { slug: string }) {
         )}
         {pending ? "Adding…" : "Add to bag"}
       </button>
-      <p
+      <SignalMessage
+        tone={result?.ok ? "success" : "danger"}
         role="status"
-        className={`text-body-sm empty:-mt-3 ${result && !result.ok ? "text-danger" : ""}`}
+        className="empty:-mt-3"
       >
         {result?.message}
         {result && (
@@ -41,7 +43,7 @@ export function AddToBagButton({ slug }: { slug: string }) {
             </Link>
           </>
         )}
-      </p>
+      </SignalMessage>
     </form>
   );
 }

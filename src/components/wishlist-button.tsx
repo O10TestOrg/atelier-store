@@ -4,6 +4,7 @@ import { useOptimistic, useState, useTransition } from "react";
 import { toggleWishlist } from "@/app/wishlist/actions";
 import { HeartIcon } from "@/components/icons";
 import { notifyWishlistChange, useIsSaved } from "@/components/wishlist-state";
+import { SignalMessage } from "@/components/signal";
 
 type Props = {
   slug: string;
@@ -54,12 +55,14 @@ export function WishlistButton({ slug, name, variant, className = "" }: Props) {
           {heart}
         </button>
         {error && (
-          <p
+          <SignalMessage
+            tone="danger"
+            size="caption"
             role="alert"
-            className="absolute top-13 right-1 left-1 bg-background px-3 py-2 text-caption text-danger"
+            className="absolute top-13 right-1 left-1 bg-background px-3 py-2"
           >
             {error}
-          </p>
+          </SignalMessage>
         )}
       </>
     );
@@ -78,9 +81,9 @@ export function WishlistButton({ slug, name, variant, className = "" }: Props) {
         {shownSaved ? "Saved to wishlist" : "Add to wishlist"}
       </button>
       {error && (
-        <p role="alert" className="text-body-sm text-danger">
+        <SignalMessage tone="danger" role="alert">
           {error}
-        </p>
+        </SignalMessage>
       )}
     </div>
   );

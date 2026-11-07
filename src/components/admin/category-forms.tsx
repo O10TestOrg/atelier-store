@@ -4,6 +4,7 @@ import { startTransition, useActionState, useId, type FormEvent } from "react";
 import type { CategoryActionResult } from "@/app/admin/categories/actions";
 import { Spinner, TextField } from "@/components/admin/fields";
 import { CATEGORY_NAME_MAX, PRODUCT_LIMITS } from "@/lib/product-form";
+import { SignalMessage } from "@/components/signal";
 
 type Action<Args extends unknown[]> = (
   previous: CategoryActionResult,
@@ -50,9 +51,9 @@ export function CreateCategoryForm({ action }: { action: Action<[FormData]> }) {
           {pending && <Spinner />}
           {pending ? "Adding…" : "Add category"}
         </button>
-        <p role="status" className={`text-body-sm ${result?.ok ? "text-success" : "text-danger"}`}>
+        <SignalMessage tone={result?.ok ? "success" : "danger"} role="status">
           {result?.message}
-        </p>
+        </SignalMessage>
       </div>
     </form>
   );
@@ -110,13 +111,15 @@ export function CategoryRow({ name, productCount, rename, remove }: RowProps) {
           </button>
         </form>
       </div>
-      <p
+      <SignalMessage
         id={`${id}-status`}
+        tone={result?.ok ? "success" : "danger"}
+        size="caption"
         role="status"
-        className={`text-caption empty:hidden ${result?.ok ? "text-muted" : "text-danger"}`}
+        className="empty:hidden"
       >
         {result?.message}
-      </p>
+      </SignalMessage>
     </div>
   );
 }
