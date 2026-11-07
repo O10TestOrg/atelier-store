@@ -85,6 +85,8 @@
   --color-danger: #a3241c;
   --color-success: #2f6b3a;
   --color-warning: #9a5b00;
+  /* Saved wishlist hearts: a muted rose that keeps 3:1 against white. */
+  --color-heart: #d26a72;
 
   /* Typography */
   --font-sans: var(--font-geist-sans), "Helvetica Neue", Helvetica, Arial,

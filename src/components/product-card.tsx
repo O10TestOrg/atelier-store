@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HeartIcon } from "@/components/icons";
+import { WishlistButton } from "@/components/wishlist-button";
 import { formatPrice, getStockState } from "@/lib/catalog";
 import type { Product } from "@/lib/products";
 
@@ -29,13 +29,12 @@ export function ProductCard({ product }: { product: Product }) {
           <p className="text-meta">{formatPrice(product.price)}</p>
         </div>
       </Link>
-      <button
-        type="button"
+      <WishlistButton
+        slug={product.slug}
+        name={product.name}
+        variant="icon"
         className="btn-icon absolute top-1 right-1 bg-background/0 hover:bg-background/80"
-        aria-label={`Add ${product.name} to wishlist`}
-      >
-        <HeartIcon />
-      </button>
+      />
     </article>
   );
 }

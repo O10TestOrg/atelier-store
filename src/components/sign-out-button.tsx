@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { clearWishlistCookie } from "@/components/wishlist-state";
 import { authClient } from "@/lib/auth-client";
 
 export function SignOutButton({ className = "btn btn-secondary" }: { className?: string }) {
@@ -11,6 +12,7 @@ export function SignOutButton({ className = "btn btn-secondary" }: { className?:
   async function signOut() {
     setPending(true);
     await authClient.signOut();
+    clearWishlistCookie();
     router.replace("/");
     // Drops the client router cache, so signed-in pages aren't reused.
     router.refresh();
