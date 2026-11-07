@@ -81,6 +81,15 @@ export function getStockState(product: Product): StockState {
 export const categoryHref = (categorySlug: string) =>
   `/collections/${categorySlug}`;
 
+export const MAX_SEARCH_LENGTH = 100;
+
+// Trims, collapses whitespace and caps length so equivalent queries share a
+// cache entry.
+export function normalizeSearchQuery(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.trim().replace(/\s+/g, " ").slice(0, MAX_SEARCH_LENGTH);
+}
+
 export const story = {
   eyebrow: "The Atelier",
   title: "Cut, stitched and finished by hand",
