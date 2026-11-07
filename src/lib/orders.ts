@@ -8,15 +8,17 @@
 // overselling under concurrent checkouts.
 import "server-only";
 import type Stripe from "stripe";
-import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   orderItems,
+  orderStatuses,
   orders,
   products,
   stripeEvents,
   type OrderStatus,
 } from "@/db/schema";
+import { CHECK_VIOLATION, FOREIGN_KEY_VIOLATION, pgError } from "@/lib/db-errors";
 import type { CheckoutProduct } from "@/lib/products";
 
 export type Order = typeof orders.$inferSelect & {
@@ -37,15 +39,10 @@ export class StockUnavailableError extends Error {
 }
 
 // Postgres check_violation (stock < 0) and foreign_key_violation (product
-// deleted mid-checkout). Drizzle wraps driver errors, so look at the cause too.
+// deleted mid-checkout).
 function isStockConflict(error: unknown) {
-  const codes = new Set(["23514", "23503"]);
-  for (let e = error; e; e = (e as { cause?: unknown }).cause) {
-    const code = (e as { code?: unknown }).code;
-    if (typeof code === "string" && codes.has(code)) return true;
-    if (typeof e !== "object") break;
-  }
-  return false;
+  const { code } = pgError(error);
+  return code === CHECK_VIOLATION || code === FOREIGN_KEY_VIOLATION;
 }
 
 // Inserts the order and its items and takes the stock, all or nothing. Prices
@@ -268,5 +265,50 @@ export async function getUserOrder(
   return db.query.orders.findFirst({
     where: and(eq(orders.id, orderId), eq(orders.userId, userId), isVisibleToCustomer),
     with: { items: true },
+  });
+}
+
+// --- Admin -------------------------------------------------------------------
+// Every order, for staff. Callers must have passed `requireAdmin()` first.
+// Uncached: admins need live statuses, and these must never share a cache entry.
+
+// "completed" is what customers see in their history; "all" adds abandoned,
+// canceled and expired checkouts.
+export const adminOrderFilters = ["completed", "all", ...orderStatuses] as const;
+export type AdminOrderFilter = (typeof adminOrderFilters)[number];
+
+export const isAdminOrderFilter = (value: unknown): value is AdminOrderFilter =>
+  adminOrderFilters.includes(value as AdminOrderFilter);
+
+export const ADMIN_ORDERS_PER_PAGE = 50;
+
+export type AdminOrder = Order & { user: { name: string; email: string } | null };
+
+function adminOrderWhere(filter: AdminOrderFilter) {
+  if (filter === "completed") return isVisibleToCustomer;
+  if (filter === "all") return undefined;
+  return eq(orders.status, filter);
+}
+
+export async function getAdminOrders(filter: AdminOrderFilter, page: number) {
+  const where = adminOrderWhere(filter);
+  const [list, [{ total }]] = await Promise.all([
+    db.query.orders.findMany({
+      where,
+      with: { items: true, user: { columns: { name: true, email: true } } },
+      orderBy: desc(orders.createdAt),
+      limit: ADMIN_ORDERS_PER_PAGE,
+      offset: (page - 1) * ADMIN_ORDERS_PER_PAGE,
+    }),
+    db.select({ total: count() }).from(orders).where(where),
+  ]);
+  return { orders: list as AdminOrder[], total };
+}
+
+export async function getAdminOrder(orderId: string): Promise<AdminOrder | undefined> {
+  if (!UUID.test(orderId)) return undefined;
+  return db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    with: { items: true, user: { columns: { name: true, email: true } } },
   });
 }

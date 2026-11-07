@@ -40,6 +40,13 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 - Sessions expire after 31 minutes, so abandoned checkouts hold stock that long. Clicking back on Stripe hits `/checkout/cancel`, which expires the session and releases stock immediately. It only acts when the httpOnly `pending_checkout` cookie (`src/lib/pending-checkout.ts`) matches the order.
 - Local webhooks: `stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired --forward-to localhost:3000/api/stripe/webhook` (newer CLIs require `--events`).
 
+## Admin
+
+- `/admin` (products, stock, categories, orders) is for users with `role = 'admin'` (`pnpm db:make-admin <email>`). Hiding links isn't access control, and neither `proxy.ts` (cookie presence only) nor `admin/layout.tsx` (static shell) checks the role.
+- Every admin page renders its data in an async component inside `<Suspense>` whose first line is `await requireAdmin("<path>")` (non-admins get a 404). Every admin Server Action starts with `await assertAdmin()` before reading input, then validates everything (`src/lib/product-form.ts`); bound ids are re-checked with `isValidId`.
+- Admin reads (`getAdmin*` in `src/lib/products.ts` / `src/lib/orders.ts`) are uncached, so they're never shared through `"use cache"`. Writes are single statements next to them and actions call `updateTag("products")`.
+- Stock is set with a compare-and-set (`setStockIfUnchanged`) so a stale form can't overwrite a checkout's reservation. Slugs are fixed after creation. Orders are read-only: only Stripe moves their status.
+
 ## Environment
 
 Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
