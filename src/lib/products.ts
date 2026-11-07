@@ -62,6 +62,19 @@ export async function getCartProducts(slugs: string[]): Promise<Product[]> {
   return selectProducts().where(inArray(products.slug, slugs));
 }
 
+export type CheckoutProduct = Product & { id: number };
+
+// Same as `getCartProducts`, plus the row id that orders and the stock
+// reservation need. Uncached: checkout must price and reserve from live rows.
+export async function getCheckoutProducts(slugs: string[]): Promise<CheckoutProduct[]> {
+  if (slugs.length === 0) return [];
+  return db
+    .select({ id: products.id, ...productFields })
+    .from(products)
+    .innerJoin(categories, eq(products.categoryId, categories.id))
+    .where(inArray(products.slug, slugs));
+}
+
 export async function getProductSlugs() {
   "use cache";
   cacheLife("hours");

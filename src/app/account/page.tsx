@@ -17,11 +17,16 @@ export default function AccountPage() {
           <Greeting />
         </Suspense>
         <p className="mt-4 max-w-prose text-muted">
-          Manage your details and find your way back to the collection.
+          Manage your details, review your orders and find your way back to the collection.
         </p>
       </header>
 
       <ul className="mt-10 grid gap-px border bg-line sm:grid-cols-2">
+        <Tile
+          href="/account/orders"
+          title="Orders"
+          description="Pieces you’ve ordered and their totals."
+        />
         <Tile
           href="/account/details"
           title="Account details"

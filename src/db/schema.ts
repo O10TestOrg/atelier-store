@@ -9,8 +9,20 @@ import {
   integer,
   pgTable,
   text,
+  jsonb,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
+
+const timestamps = {
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+};
 
 export const categories = pgTable("categories", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -59,16 +71,6 @@ export const products = pgTable(
 
 // --- Better Auth -------------------------------------------------------------
 // Model and field names must match what Better Auth expects; column names are ours.
-
-const timestamps = {
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-};
 
 export const user = pgTable(
   "user",
@@ -142,9 +144,120 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+// --- Orders ------------------------------------------------------------------
+// One order per Stripe Checkout Session. Created `pending` at checkout start,
+// in the same batch that reserves its stock; only Stripe (webhook or a
+// server-side session read) moves it on. Reads and writes go through
+// `src/lib/orders.ts`.
+
+export const orderStatuses = [
+  "pending",
+  "paid",
+  "failed",
+  "expired",
+  "canceled",
+] as const;
+export type OrderStatus = (typeof orderStatuses)[number];
+
+export const orders = pgTable(
+  "orders",
+  {
+    // Generated in the app so one batch can insert the order and its items.
+    id: uuid("id").primaryKey(),
+    // Null for guest checkouts.
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    status: text("status", { enum: orderStatuses }).notNull().default("pending"),
+    currency: text("currency").notNull().default("usd"),
+    // Minor units (cents), computed on the server from live product prices.
+    subtotal: integer("subtotal").notNull(),
+    total: integer("total").notNull(),
+    // The account email, or what the guest entered on Stripe.
+    email: text("email"),
+    shippingName: text("shipping_name"),
+    shippingAddress: jsonb("shipping_address").$type<ShippingAddress>(),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
+    // When the Checkout Session, and so the stock reservation, lapses.
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    index("orders_user_id_idx").on(table.userId),
+    index("orders_status_expires_at_idx").on(table.status, table.expiresAt),
+    check(
+      "orders_status_check",
+      sql`${table.status} in ('pending', 'paid', 'failed', 'expired', 'canceled')`,
+    ),
+    check(
+      "orders_total_check",
+      sql`${table.subtotal} >= 0 and ${table.total} >= 0`,
+    ),
+  ],
+);
+
+// Stripe's address shape, as collected on the Checkout page.
+export type ShippingAddress = {
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string | null;
+};
+
+// Name, reference and price are snapshots, so an order still reads correctly
+// after the product is edited or deleted.
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    productId: integer("product_id").references(() => products.id, {
+      onDelete: "set null",
+    }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    reference: text("reference").notNull(),
+    // Minor units (cents).
+    unitPrice: integer("unit_price").notNull(),
+    quantity: integer("quantity").notNull(),
+  },
+  (table) => [
+    index("order_items_order_id_idx").on(table.orderId),
+    check("order_items_quantity_check", sql`${table.quantity} > 0`),
+    check("order_items_unit_price_check", sql`${table.unitPrice} >= 0`),
+  ],
+);
+
+// Ledger of Stripe webhook events already handled, so redeliveries are skipped.
+export const stripeEvents = pgTable("stripe_events", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  orders: many(orders),
+}));
+
+export const orderRelations = relations(orders, ({ one, many }) => ({
+  user: one(user, { fields: [orders.userId], references: [user.id] }),
+  items: many(orderItems),
+}));
+
+export const orderItemRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

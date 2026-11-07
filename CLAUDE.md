@@ -26,12 +26,21 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 ## Cart
 
 - The bag is cookie-only (no table): an httpOnly `cart` cookie of `{ slug, quantity }` pairs, read and written through `src/lib/cart.ts`. Never store prices or names in it; `getCartProducts` in `src/lib/products.ts` reads them fresh and is deliberately uncached, so render its callers inside `<Suspense>`.
-- Mutations are the Server Actions in `src/app/bag/actions.ts`. They need no session, treat every argument and the cookie as untrusted, and clamp quantities to live stock and `MAX_QUANTITY`. Stock is not reserved; decrement it atomically at checkout.
+- Mutations are the Server Actions in `src/app/bag/actions.ts`. They need no session, treat every argument and the cookie as untrusted, and clamp quantities to live stock and `MAX_QUANTITY`. Adding to the bag doesn't reserve stock; checkout does (below).
 - `/products/[slug]` and `/collections/[slug]` are `ensureStatic = "navigation"`, so the shared header can't read cookies on the server. The bag badge reads a display-only `cart_count` cookie on the client (`src/components/bag-count.tsx`). Client code that calls a cart action must call `notifyCartChange()` afterwards.
+
+## Checkout & orders
+
+- Stripe-hosted Checkout, guests or signed in. `startCheckout` (`src/app/checkout/actions.ts`) re-prices the bag from the DB, then in one `db.batch` creates a `pending` order with item snapshots and decrements stock, then creates the Checkout Session (inline `price_data`; there's no Stripe product catalog). Never take prices or payment status from the client.
+- `neon-http` has no `db.transaction()`. Multi-step writes are one `db.batch` or one SQL statement; `products_stock_check` is what stops overselling.
+- Order writes live in `src/lib/orders.ts`. Status changes only happen `WHERE status = 'pending'`, and releasing stock is in the same statement, so duplicate Stripe events are no-ops. `stripe_events` records event ids that have been handled.
+- `src/app/api/stripe/webhook/route.ts`: `completed`/`async_payment_succeeded` → `paid` (only if `payment_status` is paid and amount and currency match); `expired`/`async_payment_failed` → release stock. `/checkout/return` (Route Handler) syncs the session from Stripe server-side and clears the bag. Use `revalidateTag("products", { expire: 0 })` in Route Handlers, `updateTag` in actions.
+- Sessions expire after 31 minutes, so abandoned checkouts hold stock that long. Clicking back on Stripe hits `/checkout/cancel`, which expires the session and releases stock immediately. It only acts when the httpOnly `pending_checkout` cookie (`src/lib/pending-checkout.ts`) matches the order.
+- Local webhooks: `stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired --forward-to localhost:3000/api/stripe/webhook` (newer CLIs require `--events`).
 
 ## Environment
 
-Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
+Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
 
 ## Checks
 
