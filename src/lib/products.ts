@@ -1,6 +1,7 @@
+import "server-only";
 import { db } from "@/db";
-import { categories, products } from "@/db/schema";
-import { and, asc, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
+import { categories, orderItems, orders, products } from "@/db/schema";
+import { and, asc, count, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { normalizeSearchQuery } from "@/lib/catalog";
 
@@ -177,4 +178,129 @@ export async function searchProducts(query: string): Promise<Product[]> {
     .where(and(...terms.map(matchesTerm)))
     .orderBy(desc(sql`coalesce(${nameMatches}, false)`), asc(products.id))
     .limit(48);
+}
+
+// --- Admin -------------------------------------------------------------------
+// Staff views and writes. Callers must have passed `requireAdmin()` (pages) or
+// `assertAdmin()` (actions) first. Reads are uncached: admins need live stock.
+// Writes are single statements; callers then `updateTag("products")`.
+
+export type AdminProduct = typeof products.$inferSelect & {
+  category: Category;
+  // Units reserved by checkouts still awaiting payment.
+  held: number;
+};
+
+const heldStock = db
+  .select({
+    productId: orderItems.productId,
+    quantity: sql<number>`sum(${orderItems.quantity})::integer`.as("quantity"),
+  })
+  .from(orderItems)
+  .innerJoin(orders, eq(orders.id, orderItems.orderId))
+  .where(eq(orders.status, "pending"))
+  .groupBy(orderItems.productId)
+  .as("held_stock");
+
+const selectAdminProducts = () =>
+  db
+    .select({
+      product: products,
+      category: { name: categories.name, slug: categories.slug },
+      held: sql<number>`coalesce(${heldStock.quantity}, 0)`.mapWith(Number),
+    })
+    .from(products)
+    .innerJoin(categories, eq(products.categoryId, categories.id))
+    .leftJoin(heldStock, eq(heldStock.productId, products.id));
+
+export async function getAdminProducts(categorySlug?: string): Promise<AdminProduct[]> {
+  const rows = await selectAdminProducts()
+    .where(categorySlug ? eq(categories.slug, categorySlug) : undefined)
+    .orderBy(asc(products.id));
+  return rows.map(({ product, category, held }) => ({ ...product, category, held }));
+}
+
+export async function getAdminProduct(id: number): Promise<AdminProduct | undefined> {
+  const [row] = await selectAdminProducts().where(eq(products.id, id)).limit(1);
+  return row && { ...row.product, category: row.category, held: row.held };
+}
+
+export type AdminCategory = Category & { id: number; productCount: number };
+
+export async function getAdminCategories(): Promise<AdminCategory[]> {
+  return db
+    .select({
+      id: categories.id,
+      name: categories.name,
+      slug: categories.slug,
+      productCount: count(products.id),
+    })
+    .from(categories)
+    .leftJoin(products, eq(products.categoryId, categories.id))
+    .groupBy(categories.id)
+    .orderBy(asc(categories.id));
+}
+
+// Everything an admin can edit after creation. Slug and stock are excluded:
+// slug is fixed once created, and stock changes go through `setStockIfUnchanged`.
+export type ProductDetails = Omit<
+  typeof products.$inferInsert,
+  "id" | "slug" | "stock" | "createdAt" | "updatedAt"
+>;
+
+export async function insertProduct(
+  input: ProductDetails & { slug: string; stock: number },
+): Promise<number> {
+  const [row] = await db.insert(products).values(input).returning({ id: products.id });
+  return row.id;
+}
+
+export async function updateProductDetails(id: number, input: ProductDetails) {
+  const [row] = await db
+    .update(products)
+    .set(input)
+    .where(eq(products.id, id))
+    .returning({ id: products.id });
+  return Boolean(row);
+}
+
+// Compare-and-set, so an admin working from a stale page can't overwrite a
+// reservation a checkout made in the meantime. Returns the stock now stored,
+// or null when the product no longer exists.
+export async function setStockIfUnchanged(id: number, expected: number, stock: number) {
+  const [updated] = await db
+    .update(products)
+    .set({ stock })
+    .where(and(eq(products.id, id), eq(products.stock, expected)))
+    .returning({ stock: products.stock });
+  if (updated) return { updated: true, stock: updated.stock } as const;
+
+  const [current] = await db
+    .select({ stock: products.stock })
+    .from(products)
+    .where(eq(products.id, id));
+  return current ? ({ updated: false, stock: current.stock } as const) : null;
+}
+
+export async function insertCategory(input: Category) {
+  await db.insert(categories).values(input);
+}
+
+export async function renameCategory(id: number, name: string) {
+  const [row] = await db
+    .update(categories)
+    .set({ name })
+    .where(eq(categories.id, id))
+    .returning({ id: categories.id });
+  return Boolean(row);
+}
+
+// `products.category_id` is `on delete restrict`, so this throws a restrict
+// violation (23001) while any product is still in the category.
+export async function deleteCategory(id: number) {
+  const [row] = await db
+    .delete(categories)
+    .where(eq(categories.id, id))
+    .returning({ id: categories.id });
+  return Boolean(row);
 }
