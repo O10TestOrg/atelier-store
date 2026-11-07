@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { BagCountSync } from "@/components/bag-count";
 import { BagLineControls } from "@/components/bag-line-controls";
+import { CheckoutButton } from "@/components/checkout-button";
 import { buildCart, readCart, reconcileCart, type BagLine } from "@/lib/cart";
 import { formatPrice, services } from "@/lib/catalog";
 import { getCartProducts } from "@/lib/products";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function BagPage() {
+export default function BagPage({ searchParams }: PageProps<"/bag">) {
   return (
     <>
       <nav aria-label="Breadcrumb" className="container-page py-4 md:py-6">
@@ -33,6 +34,7 @@ export default function BagPage() {
       <div className="container-page pb-section">
         <h1 className="pt-2 text-heading lg:pt-6">Shopping bag</h1>
         <Suspense fallback={<BagSkeleton />}>
+          <CheckoutNotice searchParams={searchParams} />
           <BagContents />
         </Suspense>
       </div>
@@ -95,17 +97,15 @@ async function BagContents() {
             <dt className="text-muted">
               Subtotal ({bag.itemCount} {bag.itemCount === 1 ? "item" : "items"})
             </dt>
-            <dd className="tabular-nums">{formatPrice(bag.subtotal)}</dd>
+            <dd className="text-right tabular-nums">{formatPrice(bag.subtotal)}</dd>
             <dt className="text-muted">Delivery</dt>
-            <dd>Complimentary</dd>
+            <dd className="text-right">Complimentary</dd>
           </dl>
           <div className="mt-6 flex items-baseline justify-between border-t border-line-strong pt-4">
             <p>Total</p>
             <p className="text-heading-sm tabular-nums">{formatPrice(bag.subtotal)}</p>
           </div>
-          <button type="button" className="btn btn-primary btn-block mt-6" disabled>
-            Checkout coming soon
-          </button>
+          <CheckoutButton expectedTotal={bag.subtotal} />
           <ul className="mt-6 flex flex-col gap-1 text-meta">
             {services.slice(0, 3).map((service) => (
               <li key={service.title}>{service.title}</li>
@@ -171,6 +171,24 @@ function BagItem({ line }: { line: BagLine }) {
         </div>
       </div>
     </li>
+  );
+}
+
+// Shown when the shopper comes back from Stripe without paying. Their bag is
+// untouched; /checkout/cancel has already released the stock it held.
+async function CheckoutNotice({ searchParams }: Pick<PageProps<"/bag">, "searchParams">) {
+  const { checkout } = await searchParams;
+  const message =
+    checkout === "canceled"
+      ? "Checkout was cancelled. Your bag is just as you left it."
+      : checkout === "expired"
+        ? "Your checkout session timed out. Please check out again."
+        : null;
+  if (!message) return null;
+  return (
+    <p role="status" className="mt-8 border px-4 py-3 text-body-sm text-muted">
+      {message}
+    </p>
   );
 }
 
