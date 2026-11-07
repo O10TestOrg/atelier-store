@@ -30,6 +30,13 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 - Mutations are the Server Actions in `src/app/bag/actions.ts`. They need no session, treat every argument and the cookie as untrusted, and clamp quantities to live stock and `MAX_QUANTITY`. Adding to the bag doesn't reserve stock; checkout does (below).
 - `/products/[slug]` and `/collections/[slug]` are `ensureStatic = "navigation"`, so the shared header can't read cookies on the server. The bag badge reads a display-only `cart_count` cookie on the client (`src/components/bag-count.tsx`). Client code that calls a cart action must call `notifyCartChange()` afterwards.
 
+## Wishlist
+
+- Guests save to a `wishlist` cookie of slugs; signed-in users save to `wishlist_items`, and the same cookie mirrors their list. Helpers live in `src/lib/wishlist.ts`, actions in `src/app/wishlist/actions.ts`.
+- The cookie is deliberately not httpOnly: hearts on `ensureStatic` pages fill from it on the client (`src/components/wishlist-state.tsx`). It holds public slugs only, and the server re-validates it on every read and never trusts it.
+- A Better Auth `hooks.after` in `src/lib/auth.ts` merges the guest's cookie into the account on sign-in/sign-up and rewrites the cookie from the DB. Sign-out clears it client-side.
+- Client code that calls a wishlist action must call `notifyWishlistChange()` afterwards. Capped at `MAX_WISHLIST` (50).
+
 ## Checkout & orders
 
 - Stripe-hosted Checkout, guests or signed in. `startCheckout` (`src/app/checkout/actions.ts`) re-prices the bag from the DB, then in one `db.batch` creates a `pending` order with item snapshots and decrements stock, then creates the Checkout Session (inline `price_data`; there's no Stripe product catalog). Never take prices or payment status from the client.

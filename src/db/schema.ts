@@ -8,6 +8,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   jsonb,
   timestamp,
@@ -240,6 +241,26 @@ export const stripeEvents = pgTable("stripe_events", {
     .notNull()
     .defaultNow(),
 });
+
+// --- Wishlist ----------------------------------------------------------------
+// Signed-in users' saved pieces. Guests keep theirs in the `wishlist` cookie
+// until they sign in. Reads and writes go through `src/lib/wishlist.ts`.
+
+export const wishlistItems = pgTable(
+  "wishlist_items",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.productId] })],
+);
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

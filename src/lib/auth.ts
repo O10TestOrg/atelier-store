@@ -1,8 +1,16 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import {
+  WISHLIST_COOKIE,
+  addUserWishlist,
+  getUserWishlistSlugs,
+  parseWishlist,
+  wishlistCookieOptions,
+} from "@/lib/wishlist";
 
 // BETTER_AUTH_SECRET and BETTER_AUTH_URL are read from the environment.
 export const auth = betterAuth({
@@ -30,6 +38,24 @@ export const auth = betterAuth({
   },
   // On by default in production only; explicit so dev behaves the same.
   rateLimit: { enabled: true },
+  hooks: {
+    // Merges what a guest saved into the account they sign in or up to, then
+    // rewrites the cookie from the account, so pieces saved elsewhere show too.
+    after: createAuthMiddleware(async (ctx) => {
+      const newSession = ctx.context.newSession;
+      if (!newSession) return;
+      if (!ctx.path.startsWith("/sign-in") && !ctx.path.startsWith("/sign-up")) return;
+
+      const userId = newSession.user.id;
+      await addUserWishlist(userId, parseWishlist(ctx.getCookie(WISHLIST_COOKIE)));
+      const slugs = await getUserWishlistSlugs(userId);
+      ctx.setCookie(
+        WISHLIST_COOKIE,
+        JSON.stringify(slugs),
+        slugs.length > 0 ? wishlistCookieOptions : { ...wishlistCookieOptions, maxAge: 0 },
+      );
+    }),
+  },
   // Must stay last so it can set cookies from Server Actions.
   plugins: [nextCookies()],
 });

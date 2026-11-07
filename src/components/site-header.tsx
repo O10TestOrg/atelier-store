@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BagCount } from "@/components/bag-count";
+import { WishlistCount } from "@/components/wishlist-state";
 import {
   BagIcon,
   CloseIcon,
@@ -87,12 +88,9 @@ export function SiteHeader() {
           >
             <UserIcon />
           </Link>
-          <Link
-            href="/wishlist"
-            className="btn-icon hidden sm:inline-flex"
-            aria-label="Wishlist"
-          >
+          <Link href="/wishlist" className="btn-icon relative hidden sm:inline-flex">
             <HeartIcon />
+            <WishlistCount />
           </Link>
           <Link href="/bag" className="btn-icon relative">
             <BagIcon />
