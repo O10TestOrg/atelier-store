@@ -8,6 +8,7 @@ import { StockForm } from "@/components/admin/stock-form";
 import { isValidId, parseInteger } from "@/lib/product-form";
 import { getAdminCategories, getAdminProduct } from "@/lib/products";
 import { requireAdmin } from "@/lib/session";
+import { SignalMessage } from "@/components/signal";
 
 export const metadata: Metadata = {
   title: "Edit product",
@@ -48,7 +49,11 @@ async function EditProduct({
         <div>
           <p className="text-eyebrow text-muted">Ref. {product.reference}</p>
           <h1 className="mt-4 text-heading">{product.name}</h1>
-          {created && <p className="mt-4 text-body-sm text-success" role="status">Product created.</p>}
+          {created && (
+            <SignalMessage tone="success" role="status" className="mt-4">
+              Product created.
+            </SignalMessage>
+          )}
         </div>
         <Link href={`/products/${product.slug}`} className="link text-body-sm">
           View in store

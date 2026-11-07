@@ -8,6 +8,7 @@ import { CheckoutButton } from "@/components/checkout-button";
 import { buildCart, readCart, reconcileCart, type BagLine } from "@/lib/cart";
 import { formatPrice, services } from "@/lib/catalog";
 import { getCartProducts } from "@/lib/products";
+import { Notice, SignalMessage } from "@/components/signal";
 
 export const metadata: Metadata = {
   title: "Shopping bag",
@@ -151,14 +152,14 @@ function BagItem({ line }: { line: BagLine }) {
         </div>
 
         {status === "reduced" && (
-          <p className="mt-3 text-caption text-warning">
+          <SignalMessage tone="warning" size="caption" className="mt-3">
             Only {quantity} available, so we’ve reduced the quantity.
-          </p>
+          </SignalMessage>
         )}
         {status === "unavailable" && (
-          <p className="mt-3 text-caption text-danger">
+          <SignalMessage tone="danger" size="caption" className="mt-3">
             Out of stock. This piece isn’t included in your total.
-          </p>
+          </SignalMessage>
         )}
 
         <div className="mt-auto pt-4">
@@ -178,26 +179,26 @@ function BagItem({ line }: { line: BagLine }) {
 // untouched; /checkout/cancel has already released the stock it held.
 async function CheckoutNotice({ searchParams }: Pick<PageProps<"/bag">, "searchParams">) {
   const { checkout } = await searchParams;
-  const message =
+  const notice =
     checkout === "canceled"
-      ? "Checkout was cancelled. Your bag is just as you left it."
+      ? { tone: "info" as const, message: "Checkout was cancelled. Your bag is just as you left it." }
       : checkout === "expired"
-        ? "Your checkout session timed out. Please check out again."
+        ? { tone: "warning" as const, message: "Your checkout session timed out. Please check out again." }
         : null;
-  if (!message) return null;
+  if (!notice) return null;
   return (
-    <p role="status" className="mt-8 border px-4 py-3 text-body-sm text-muted">
-      {message}
-    </p>
+    <Notice tone={notice.tone} role="status" className="mt-8">
+      {notice.message}
+    </Notice>
   );
 }
 
 function RemovedNotice({ count }: { count: number }) {
   return (
-    <p role="status" className="mb-6 border px-4 py-3 text-body-sm text-muted">
+    <Notice tone="warning" role="status" className="mb-6">
       {count === 1 ? "A piece in your bag is" : `${count} pieces in your bag are`} no
       longer sold and won’t be included.
-    </p>
+    </Notice>
   );
 }
 

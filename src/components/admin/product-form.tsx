@@ -4,6 +4,7 @@ import { startTransition, useActionState, useEffect, useRef, type FormEvent } fr
 import type { ProductActionResult } from "@/app/admin/products/actions";
 import { Spinner, SelectField, TextArea, TextField } from "@/components/admin/fields";
 import { PRODUCT_LIMITS } from "@/lib/product-form";
+import { SignalMessage } from "@/components/signal";
 
 type Category = { id: number; name: string };
 
@@ -36,7 +37,7 @@ const toDollars = (cents: number) =>
 export function ProductForm({ action, categories, product }: Props) {
   const isEdit = Boolean(product);
   const [result, formAction, pending] = useActionState(action, null);
-  const alertRef = useRef<HTMLDivElement>(null);
+  const alertRef = useRef<HTMLParagraphElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const errors = result?.fieldErrors ?? {};
 
@@ -213,14 +214,15 @@ export function ProductForm({ action, categories, product }: Props) {
           {pending && <Spinner />}
           {isEdit ? (pending ? "Saving…" : "Save changes") : pending ? "Creating…" : "Create product"}
         </button>
-        <div
+        <SignalMessage
           ref={alertRef}
+          tone={result?.ok ? "success" : "danger"}
           role="status"
           tabIndex={-1}
-          className={`text-body-sm outline-none ${result?.ok ? "text-success" : "text-danger"}`}
+          className="outline-none"
         >
           {result?.message}
-        </div>
+        </SignalMessage>
       </div>
     </form>
   );

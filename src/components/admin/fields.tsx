@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, type ComponentProps, type ReactNode } from "react";
+import { SignalMessage } from "@/components/signal";
 
 // Same label, hint and error wiring as the Field in auth-form.tsx.
 
@@ -37,9 +38,9 @@ function Wrapper({
       <label htmlFor={id}>{label}</label>
       <div className="mt-2">{children}</div>
       {error && (
-        <p id={`${id}-error`} className="mt-2 text-caption text-danger">
+        <SignalMessage id={`${id}-error`} tone="danger" size="caption" className="mt-2">
           {error}
-        </p>
+        </SignalMessage>
       )}
       {hint && (
         <p id={`${id}-hint`} className="mt-2 text-caption text-muted">

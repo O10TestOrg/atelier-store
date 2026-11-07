@@ -15,6 +15,7 @@ import {
 import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { authClient } from "@/lib/auth-client";
 import { safeRedirectPath } from "@/lib/redirect";
+import { Notice, SignalMessage } from "@/components/signal";
 
 type Mode = "sign-in" | "sign-up";
 type FieldName = "name" | "email" | "password";
@@ -238,14 +239,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
       </fieldset>
 
       {formError && (
-        <div
-          ref={alertRef}
-          role="alert"
-          tabIndex={-1}
-          className="border border-danger px-4 py-3 text-body-sm text-danger outline-none"
-        >
+        <Notice ref={alertRef} tone="danger" role="alert" tabIndex={-1} className="outline-none">
           {formError.message}
-        </div>
+        </Notice>
       )}
 
       <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
@@ -290,9 +286,9 @@ function Field({ label, error, hint, trailing, className = "", ...inputProps }: 
         {trailing}
       </div>
       {error && (
-        <p id={errorId} className="mt-2 text-caption text-danger">
+        <SignalMessage id={errorId} tone="danger" size="caption" className="mt-2">
           {error}
-        </p>
+        </SignalMessage>
       )}
       {hint && (
         <p id={hintId} className="mt-2 text-caption text-muted">

@@ -31,7 +31,7 @@ export function OrderStatus({
     variant === "admin" ? adminStates[order.status] : states[orderState(order)];
   return (
     <p className="flex items-center gap-2 text-body-sm">
-      <span aria-hidden="true" className={`size-2 rounded-pill ${dot}`} />
+      <span aria-hidden="true" className={`size-2 rounded-pill transition-colors ${dot}`} />
       {label}
     </p>
   );

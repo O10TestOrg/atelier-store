@@ -54,9 +54,19 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 - Admin reads (`getAdmin*` in `src/lib/products.ts` / `src/lib/orders.ts`) are uncached, so they're never shared through `"use cache"`. Writes are single statements next to them and actions call `updateTag("products")`.
 - Stock is set with a compare-and-set (`setStockIfUnchanged`) so a stale form can't overwrite a checkout's reservation. Slugs are fixed after creation. Orders are read-only: only Stripe moves their status.
 
+## Signal colour
+
+- Colour signals state on a small glyph and the copy stays ink, the way the saved wishlist heart fills rose. Use `SignalMessage` (inline) or `Notice` (hairline box) from `src/components/signal.tsx` with a `tone` (`success`, `warning`, `danger`, `info`) rather than `text-danger` and friends on text.
+- The tones are raw tokens in `globals.css` (`--success`, `--warning`, `--danger`, `--heart`) with lighter values under `.theme-inverse`/`.dark`. `SignalMessage` always renders its element so `role="status"` regions exist before the first message.
+
 ## Environment
 
 Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
+
+## Git
+
+- Every new piece of work gets its own branch off `main` (`feat/<topic>`, `fix/<topic>`), even when the session started on another feature branch. Never commit or push to a branch that already exists unless the user names that branch. Check `git branch --show-current` before the first commit.
+- Only commit files you changed for the task; leave unrelated working-tree edits (such as a modified `.env.example`) out.
 
 ## Checks
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { HeartIcon } from "@/components/icons";
 
 // Written by the wishlist actions and the sign-in hook (src/lib/wishlist.ts).
 // It's display-only: the server never trusts it.
@@ -52,6 +53,17 @@ const useWishlistCookie = () => useSyncExternalStore(subscribe, readCookie, () =
 // Prerendered pages show every heart empty; saved ones fill once hydrated.
 export function useIsSaved(slug: string) {
   return parse(useWishlistCookie()).includes(slug);
+}
+
+// The header heart fills rose once anything is saved, like the product hearts.
+export function WishlistHeartIcon() {
+  const saved = parse(useWishlistCookie()).length > 0;
+  return (
+    <HeartIcon
+      fill={saved ? "currentColor" : "none"}
+      className={`transition-colors ${saved ? "text-heart" : ""}`}
+    />
+  );
 }
 
 export function WishlistCount() {
