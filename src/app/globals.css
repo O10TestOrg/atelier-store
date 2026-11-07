@@ -1,0 +1,471 @@
+@import "tailwindcss";
+
+/*
+ * Atelier design system
+ * Restrained, image-led luxury retail: a warm near-black ink on white,
+ * one regular weight, hairline borders, square surfaces, pill CTAs and
+ * generous whitespace. Everything below is token-driven, so brand changes
+ * happen here rather than in components.
+ *
+ * Hand-written CSS below reads the raw tokens (var(--surface)), never the
+ * --color-* aliases: those resolve once at :root, so `.theme-inverse` and
+ * `.dark` could not re-scope them.
+ */
+
+/* Dark mode is opt-in via a `.dark` ancestor, never from the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+ * Raw tokens: these change per theme or per breakpoint
+ * ------------------------------------------------------------------------- */
+:root {
+  --background: #ffffff;
+  --foreground: #19110b;
+  --surface: #f6f5f3;
+  --surface-strong: #eae8e4;
+  --muted: #6b645e;
+  --line: #e1dfdc;
+  --line-strong: #19110b;
+  --inverse-background: #19110b;
+  --inverse-foreground: #ffffff;
+
+  --gutter: 1.25rem;
+  --section-space: 3rem;
+  --grid-gap-x: 0.25rem;
+  --grid-gap-y: 2rem;
+  --header-height: 3.5rem;
+}
+
+@media (width >= 48rem) {
+  :root {
+    --gutter: 2.5rem;
+    --section-space: 4.5rem;
+    --grid-gap-x: 0.5rem;
+    --grid-gap-y: 2.5rem;
+    --header-height: 4rem;
+  }
+}
+
+@media (width >= 80rem) {
+  :root {
+    --gutter: 4rem;
+    --section-space: 6rem;
+  }
+}
+
+/* Inverse scope for full-bleed ink sections, such as heroes and banners. */
+.theme-inverse,
+.dark {
+  --background: #19110b;
+  --foreground: #ffffff;
+  --surface: #261c15;
+  --surface-strong: #33281f;
+  --muted: #b5aea7;
+  --line: #3d3229;
+  --line-strong: #ffffff;
+  --inverse-background: #ffffff;
+  --inverse-foreground: #19110b;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tailwind theme: generates utilities such as bg-surface, text-heading,
+ * px-gutter, max-w-page and rounded-pill
+ * ------------------------------------------------------------------------- */
+@theme inline {
+  /* Color */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-inverse: var(--inverse-background);
+  --color-on-inverse: var(--inverse-foreground);
+  --color-danger: #a3241c;
+  --color-success: #2f6b3a;
+  --color-warning: #9a5b00;
+
+  /* Typography */
+  --font-sans: var(--font-geist-sans), "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Layout */
+  --spacing-gutter: var(--gutter);
+  --spacing-section: var(--section-space);
+  --spacing-header: var(--header-height);
+}
+
+@theme {
+  /* Type scale: a single regular weight; hierarchy comes from size and space */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--letter-spacing: 0.01em;
+
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+
+  --text-heading-sm: 1.125rem;
+  --text-heading-sm--line-height: 1.5rem;
+  --text-heading-sm--letter-spacing: 0.025em;
+
+  --text-heading: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --text-heading--line-height: 1.33;
+  --text-heading--letter-spacing: 0.025em;
+
+  --text-display: clamp(1.75rem, 1.3rem + 1.8vw, 2.75rem);
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: 0.02em;
+
+  --tracking-eyebrow: 0.12em;
+
+  /* Containers */
+  --container-page: 90rem;
+  --container-prose: 40rem;
+  --container-form: 28rem;
+
+  /* Radius: square surfaces, pill controls */
+  --radius-none: 0;
+  --radius-pill: 9999px;
+
+  /* Media */
+  --aspect-product: 4 / 5;
+  --aspect-editorial: 3 / 4;
+  --aspect-banner: 16 / 9;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: var(--ease-standard);
+}
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------- */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--line);
+  }
+
+  html {
+    scroll-padding-top: var(--header-height);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headings stay regular weight; size, tracking and space carry hierarchy. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img,
+  video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--line-strong);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: var(--foreground);
+    color: var(--background);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Layout primitives
+ * ------------------------------------------------------------------------- */
+
+/* Centered page width with responsive side gutters. */
+@utility container-page {
+  width: 100%;
+  max-width: var(--container-page);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Readable column for editorial copy, legal text and help pages. */
+@utility container-prose {
+  width: 100%;
+  max-width: calc(var(--container-prose) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Narrow column for sign-in, checkout steps and other forms. */
+@utility container-form {
+  width: 100%;
+  max-width: calc(var(--container-form) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Breaks out of any container to the full viewport width. */
+@utility full-bleed {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+}
+
+/* Vertical rhythm between page sections. */
+@utility section {
+  padding-block: var(--section-space);
+}
+
+/* Product listing grid: 2 columns, then 3, then 4. */
+@utility grid-products {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--grid-gap-x);
+  row-gap: var(--grid-gap-y);
+
+  @media (width >= 64rem) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (width >= 80rem) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Editorial grid: 1 column, then 2 side-by-side image and story panels. */
+@utility grid-editorial {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gap-x);
+
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Product image surface: soft neutral backdrop, fixed ratio, centered item. */
+@utility media-product {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: var(--aspect-product);
+  background: var(--surface);
+
+  & > img,
+  & > video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+/* Editorial or campaign imagery that fills its frame edge to edge. */
+@utility media-cover {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-strong);
+
+  & > img,
+  & > video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Sticky top bar sized by the header token. */
+@utility header-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--header-height);
+  background: var(--background);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Hairline divider. */
+@utility hairline {
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------------------------------------------------------------------------
+ * Typography primitives
+ * ------------------------------------------------------------------------- */
+
+/* Small uppercase label above titles, in filters and in navigation groups. */
+@utility text-eyebrow {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+/* Price and secondary product metadata. */
+@utility text-meta {
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * Links
+ * ------------------------------------------------------------------------- */
+
+/* Underlined inline link; the underline thins away on hover. */
+@utility link {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  transition-property: text-decoration-color;
+  transition-duration: var(--default-transition-duration);
+  transition-timing-function: var(--ease-standard);
+
+  &:hover {
+    text-decoration-color: transparent;
+  }
+}
+
+/* Quiet link for navigation and footers; the underline appears on hover. */
+@utility link-quiet {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  text-decoration-color: transparent;
+  transition-property: text-decoration-color;
+  transition-duration: var(--default-transition-duration);
+  transition-timing-function: var(--ease-standard);
+
+  &:hover,
+  &[aria-current="page"] {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons: combine `btn` with a variant, e.g. class="btn btn-primary"
+ * ------------------------------------------------------------------------- */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding-inline: 2rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--default-transition-duration);
+  transition-timing-function: var(--ease-standard);
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+}
+
+/* Main action: ink fill. */
+@utility btn-primary {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+
+  &:hover:not(:disabled, [aria-disabled="true"]) {
+    background: color-mix(in srgb, var(--foreground) 82%, var(--background));
+  }
+}
+
+/* Secondary action: hairline outline. */
+@utility btn-secondary {
+  background: transparent;
+  color: var(--foreground);
+  border-color: var(--line-strong);
+
+  &:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--surface);
+  }
+}
+
+/* Low-emphasis action on imagery or toolbars. */
+@utility btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+
+  &:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--surface);
+  }
+}
+
+/* Size and width modifiers. */
+@utility btn-sm {
+  min-height: 2.25rem;
+  padding-inline: 1.25rem;
+  font-size: var(--text-caption);
+}
+
+@utility btn-block {
+  width: 100%;
+}
+
+/* Round icon-only control for search, wishlist, bag and close. */
+@utility btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-pill);
+  color: var(--foreground);
+  transition-property: background-color;
+  transition-duration: var(--default-transition-duration);
+  transition-timing-function: var(--ease-standard);
+
+  &:hover {
+    background: var(--surface);
+  }
+}
