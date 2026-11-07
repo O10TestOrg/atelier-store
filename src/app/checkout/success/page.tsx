@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { OrderAddress } from "@/components/order-address";
 import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
 import { getOrderBySessionId, orderReference, type Order } from "@/lib/orders";
@@ -59,17 +60,7 @@ async function Confirmation({
         {order.shippingAddress && (
           <div className="mt-8 text-body-sm">
             <h2 className="text-eyebrow text-muted">Delivering to</h2>
-            <address className="mt-3 not-italic">
-              {order.shippingName && <>{order.shippingName}<br /></>}
-              {order.shippingAddress.line1}
-              {order.shippingAddress.line2 && <><br />{order.shippingAddress.line2}</>}
-              <br />
-              {[order.shippingAddress.city, order.shippingAddress.state, order.shippingAddress.postal_code]
-                .filter(Boolean)
-                .join(", ")}
-              <br />
-              {countryName(order.shippingAddress.country)}
-            </address>
+            <OrderAddress order={order} className="mt-3" />
           </div>
         )}
         <Link href="/collections/new" className="btn btn-primary mt-8">
@@ -87,18 +78,6 @@ async function Confirmation({
       </section>
     </div>
   );
-}
-
-const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-
-// Stripe sends ISO country codes ("FR"); show the name ("France").
-function countryName(code: string | null) {
-  if (!code) return null;
-  try {
-    return regionNames.of(code) ?? code;
-  } catch {
-    return code;
-  }
 }
 
 function statusCopy(order: Order) {

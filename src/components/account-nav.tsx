@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 
 const items = [
@@ -13,11 +13,14 @@ const items = [
 
 const itemClass = "link-quiet block py-2 lg:py-1.5";
 
+// Sections stay marked on their sub-pages (an order under Orders), except the
+// Overview root, which would otherwise match everything.
+const isCurrent = (pathname: string, href: string) =>
+  pathname === href || (href !== "/account" && pathname.startsWith(`${href}/`));
+
 // Horizontal, scrollable tabs on small screens; a sidebar list from lg up.
 // `extra` holds items that depend on the session (e.g. the admin link).
 export function AccountNav({ extra }: { extra?: ReactNode }) {
-  const pathname = usePathname();
-
   return (
     <nav
       aria-label="Account"
@@ -26,13 +29,15 @@ export function AccountNav({ extra }: { extra?: ReactNode }) {
       <ul className="flex gap-6 text-body-sm whitespace-nowrap lg:flex-col lg:gap-1">
         {items.map((item) => (
           <li key={item.href}>
-            <Link
-              href={item.href}
-              className={itemClass}
-              aria-current={pathname === item.href ? "page" : undefined}
+            <Suspense
+              fallback={
+                <Link href={item.href} className={itemClass}>
+                  {item.label}
+                </Link>
+              }
             >
-              {item.label}
-            </Link>
+              <NavLink href={item.href}>{item.label}</NavLink>
+            </Suspense>
           </li>
         ))}
         {extra}
@@ -41,6 +46,21 @@ export function AccountNav({ extra }: { extra?: ReactNode }) {
         </li>
       </ul>
     </nav>
+  );
+}
+
+// usePathname suspends while prerendering routes with unknown params (an
+// order page), so only the active marking waits; the links themselves don't.
+function NavLink({ href, children }: { href: string; children: ReactNode }) {
+  const pathname = usePathname();
+  return (
+    <Link
+      href={href}
+      className={itemClass}
+      aria-current={isCurrent(pathname, href) ? "page" : undefined}
+    >
+      {children}
+    </Link>
   );
 }
 

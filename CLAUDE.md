@@ -12,6 +12,7 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 
 - `cacheComponents` and `partialPrefetching` are on (`next.config.ts`). Dynamic data (cookies, headers, sessions, uncached DB reads) must sit inside `<Suspense>` or use `"use cache"`. Read `node_modules/next/dist/docs/01-app/02-guides/authentication-with-cache-components.md` before adding session checks.
 - `middleware.ts` is deprecated; route interception goes in `src/proxy.ts`.
+- `usePathname()` suspends under a dynamic segment without `generateStaticParams` (e.g. `/account/orders/[id]`), and that fails the build for any layout above it. Wrap only the part that reads it in `<Suspense>`, as `AccountNav` does for its active link.
 
 ## Database & auth
 
@@ -33,6 +34,7 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 
 - Stripe-hosted Checkout, guests or signed in. `startCheckout` (`src/app/checkout/actions.ts`) re-prices the bag from the DB, then in one `db.batch` creates a `pending` order with item snapshots and decrements stock, then creates the Checkout Session (inline `price_data`; there's no Stripe product catalog). Never take prices or payment status from the client.
 - `neon-http` has no `db.transaction()`. Multi-step writes are one `db.batch` or one SQL statement; `products_stock_check` is what stops overselling.
+- Customer order reads are `getUserOrders` / `getUserOrder` in `src/lib/orders.ts`. Ownership is a `WHERE user_id` in the query, never a check after fetching, and a miss is `notFound()` so ids can't be probed. Customers only see orders completed on Stripe (paid, or with a shipping address); abandoned, canceled and expired checkouts stay hidden.
 - Order writes live in `src/lib/orders.ts`. Status changes only happen `WHERE status = 'pending'`, and releasing stock is in the same statement, so duplicate Stripe events are no-ops. `stripe_events` records event ids that have been handled.
 - `src/app/api/stripe/webhook/route.ts`: `completed`/`async_payment_succeeded` → `paid` (only if `payment_status` is paid and amount and currency match); `expired`/`async_payment_failed` → release stock. `/checkout/return` (Route Handler) syncs the session from Stripe server-side and clears the bag. Use `revalidateTag("products", { expire: 0 })` in Route Handlers, `updateTag` in actions.
 - Sessions expire after 31 minutes, so abandoned checkouts hold stock that long. Clicking back on Stripe hits `/checkout/cancel`, which expires the session and releases stock immediately. It only acts when the httpOnly `pending_checkout` cookie (`src/lib/pending-checkout.ts`) matches the order.
@@ -45,3 +47,5 @@ Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET`
 ## Checks
 
 No test framework or formatter yet. Verify changes with `pnpm lint` and `pnpm build`.
+
+To check signed-in pages, create a throwaway customer with `POST /api/auth/sign-up/email` (send an `Origin` header). When cleaning up, delete their orders before the user: `orders.user_id` is `on delete set null`, so deleting the user first leaves orphaned orders behind.
