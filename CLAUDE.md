@@ -63,6 +63,11 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 
 Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
 
+## Git
+
+- Every new piece of work gets its own branch off `main` (`feat/<topic>`, `fix/<topic>`), even when the session started on another feature branch. Never commit or push to a branch that already exists unless the user names that branch. Check `git branch --show-current` before the first commit.
+- Only commit files you changed for the task; leave unrelated working-tree edits (such as a modified `.env.example`) out.
+
 ## Checks
 
 No test framework or formatter yet. Verify changes with `pnpm lint` and `pnpm build`.
