@@ -240,19 +240,33 @@ export async function getOrderBySessionId(sessionId: string): Promise<Order | un
   });
 }
 
-// Paid orders, plus pending ones the shopper actually completed on Stripe
-// (an async payment still clearing). A completed session has a shipping
-// address; an abandoned checkout doesn't, so it isn't listed.
+// Paid orders, plus any the shopper actually completed on Stripe: an async
+// payment still clearing (pending) or one that later failed. A completed
+// session has a shipping address; an abandoned, canceled or expired checkout
+// doesn't, so it isn't listed.
+const isVisibleToCustomer = or(
+  eq(orders.status, "paid"),
+  isNotNull(orders.shippingAddress),
+);
+
 export async function getUserOrders(userId: string): Promise<Order[]> {
   return db.query.orders.findMany({
-    where: and(
-      eq(orders.userId, userId),
-      or(
-        eq(orders.status, "paid"),
-        and(eq(orders.status, "pending"), isNotNull(orders.shippingAddress)),
-      ),
-    ),
+    where: and(eq(orders.userId, userId), isVisibleToCustomer),
     with: { items: true },
     orderBy: desc(orders.createdAt),
+  });
+}
+
+// One of the user's orders, or undefined when it doesn't exist, belongs to
+// someone else or isn't listed in their history. Callers treat all three as
+// a 404, so order ids can't be probed.
+export async function getUserOrder(
+  userId: string,
+  orderId: string,
+): Promise<Order | undefined> {
+  if (!UUID.test(orderId)) return undefined;
+  return db.query.orders.findFirst({
+    where: and(eq(orders.id, orderId), eq(orders.userId, userId), isVisibleToCustomer),
+    with: { items: true },
   });
 }

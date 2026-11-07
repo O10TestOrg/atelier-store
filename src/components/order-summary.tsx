@@ -17,6 +17,7 @@ export function OrderSummary({ order }: { order: Order }) {
               </Link>
               <p className="mt-1 text-meta">
                 Ref. {item.reference} · Qty {item.quantity}
+                {item.quantity > 1 && <> · {formatPrice(item.unitPrice)} each</>}
               </p>
             </div>
             <p className="tabular-nums">{formatPrice(item.unitPrice * item.quantity)}</p>

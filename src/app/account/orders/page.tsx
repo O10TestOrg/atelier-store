@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { OrderStatus } from "@/components/order-status";
-import { OrderSummary } from "@/components/order-summary";
+import { formatPrice } from "@/lib/catalog";
 import { getUserOrders, orderReference } from "@/lib/orders";
 import { requireUser } from "@/lib/session";
 
@@ -19,8 +19,12 @@ export default function OrdersPage() {
       <header>
         <p className="text-eyebrow text-muted">Orders</p>
         <h1 className="mt-4 text-heading">Your orders</h1>
+        <p className="mt-4 max-w-prose text-muted">
+          Orders you’ve placed while signed in, newest first. Select one for its items and
+          delivery details.
+        </p>
       </header>
-      <Suspense fallback={<div aria-hidden="true" className="mt-10 h-72 animate-pulse bg-surface" />}>
+      <Suspense fallback={<OrderListSkeleton />}>
         <OrderList />
       </Suspense>
     </>
@@ -46,22 +50,52 @@ async function OrderList() {
   }
 
   return (
-    <ul className="mt-10 flex flex-col gap-8">
-      {orders.map((order) => (
-        <li key={order.id} className="bg-surface p-6 md:p-8">
-          <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-            <div>
-              <h2 className="text-heading-sm">Order {orderReference(order)}</h2>
-              <p className="mt-1 text-meta">
-                Placed{" "}
-                <time dateTime={order.createdAt.toISOString()}>
-                  {dateFormat.format(order.createdAt)}
-                </time>
-              </p>
-            </div>
-            <OrderStatus order={order} />
-          </div>
-          <OrderSummary order={order} />
+    <ul className="mt-10 border-t">
+      {orders.map((order) => {
+        const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
+        return (
+          <li key={order.id} className="border-b">
+            <Link
+              href={`/account/orders/${order.id}`}
+              className="group flex flex-col gap-3 py-5 sm:grid sm:grid-cols-[minmax(0,1fr)_12rem_7rem_1rem] sm:items-center sm:gap-6"
+            >
+              <div className="min-w-0">
+                <h2 className="text-body-sm">Order {orderReference(order)}</h2>
+                <p className="mt-1 text-meta">
+                  <time dateTime={order.createdAt.toISOString()}>
+                    {dateFormat.format(order.createdAt)}
+                  </time>{" "}
+                  · {itemCount} {itemCount === 1 ? "item" : "items"}
+                </p>
+              </div>
+              <div className="flex items-baseline justify-between gap-6 sm:contents">
+                <OrderStatus order={order} />
+                <p className="text-body-sm tabular-nums sm:text-right">
+                  <span className="sr-only">Total </span>
+                  {formatPrice(order.total)}
+                </p>
+              </div>
+              <span
+                aria-hidden="true"
+                className="hidden transition-transform group-hover:translate-x-1 sm:block"
+              >
+                →
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function OrderListSkeleton() {
+  return (
+    <ul aria-hidden="true" className="mt-10 border-t">
+      {[0, 1, 2].map((row) => (
+        <li key={row} className="flex flex-col gap-3 border-b py-5">
+          <div className="h-5 w-40 animate-pulse bg-surface" />
+          <div className="h-5 w-full max-w-md animate-pulse bg-surface" />
         </li>
       ))}
     </ul>
