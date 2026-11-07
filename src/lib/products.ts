@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { categories, products } from "@/db/schema";
-import { and, asc, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { normalizeSearchQuery } from "@/lib/catalog";
 
@@ -53,6 +53,13 @@ export async function getNewArrivals(limit = 24): Promise<Product[]> {
     .where(eq(products.isNew, true))
     .orderBy(desc(products.createdAt), desc(products.id))
     .limit(limit);
+}
+
+// Deliberately uncached: the bag must show today's price and stock, not the
+// copy cached for the catalog. Callers that render it sit inside <Suspense>.
+export async function getCartProducts(slugs: string[]): Promise<Product[]> {
+  if (slugs.length === 0) return [];
+  return selectProducts().where(inArray(products.slug, slugs));
 }
 
 export async function getProductSlugs() {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BagCount } from "@/components/bag-count";
 import {
   BagIcon,
   CloseIcon,
@@ -93,8 +94,9 @@ export function SiteHeader() {
           >
             <HeartIcon />
           </Link>
-          <Link href="/bag" className="btn-icon" aria-label="Shopping bag">
+          <Link href="/bag" className="btn-icon relative">
             <BagIcon />
+            <BagCount />
           </Link>
         </div>
       </div>

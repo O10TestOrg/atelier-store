@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { AddToBagButton } from "@/components/add-to-bag-button";
 import { HeartIcon, PlusIcon } from "@/components/icons";
 import { ProductCard } from "@/components/product-card";
 import { StockStatus } from "@/components/stock-status";
@@ -111,9 +112,7 @@ export default async function ProductPage({
               </>
             ) : (
               <>
-                <button type="button" className="btn btn-primary btn-block">
-                  Add to bag
-                </button>
+                <AddToBagButton slug={product.slug} />
                 <button type="button" className="btn btn-secondary btn-block">
                   <HeartIcon />
                   Add to wishlist
