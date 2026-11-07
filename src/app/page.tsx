@@ -2,10 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { campaigns, collections, hero, services, story } from "@/lib/catalog";
-import { getProducts } from "@/lib/products";
+import { getNewArrivals } from "@/lib/products";
 
 export default async function Home() {
-  const products = await getProducts();
+  const products = await getNewArrivals(8);
 
   return (
     <>
