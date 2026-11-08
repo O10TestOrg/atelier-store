@@ -36,6 +36,13 @@
       "when": 1794142994881,
       "tag": "0004_windy_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794144870498,
+      "tag": "0005_fuzzy_the_hood",
+      "breakpoints": true
     }
   ]
 }

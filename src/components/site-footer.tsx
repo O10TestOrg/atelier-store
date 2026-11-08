@@ -63,7 +63,7 @@ export function SiteFooter() {
           <span className="text-body-sm tracking-[0.35em] text-foreground uppercase">
             Atelier
           </span>
-          <span>United States (USD)</span>
+          <span>United Kingdom (GBP)</span>
           <span>© 2026 Atelier. All rights reserved.</span>
         </div>
       </div>

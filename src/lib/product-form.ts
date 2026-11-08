@@ -12,7 +12,7 @@ export const PRODUCT_LIMITS = {
   details: 20,
   detail: 200,
   stock: 100_000,
-  // $1,000,000.00, in cents.
+  // £1,000,000.00, in pence.
   price: 100_000_000,
 } as const;
 
@@ -64,12 +64,12 @@ export function parseInteger(value: unknown, max = Number.MAX_SAFE_INTEGER) {
 export const isValidId = (value: unknown): value is number =>
   Number.isSafeInteger(value) && (value as number) > 0;
 
-// Dollars as typed ("1250" or "1250.50") to integer cents.
+// Pounds as typed ("1250" or "1250.50") to integer pence.
 function parsePrice(value: string) {
-  const normalized = value.replace(/[$,\s]/g, "");
+  const normalized = value.replace(/[£,\s]/g, "");
   if (!PRICE_PATTERN.test(normalized)) return null;
-  const [dollars, cents = ""] = normalized.split(".");
-  const price = Number(dollars) * 100 + Number(cents.padEnd(2, "0"));
+  const [pounds, pence = ""] = normalized.split(".");
+  const price = Number(pounds) * 100 + Number(pence.padEnd(2, "0"));
   return Number.isSafeInteger(price) && price <= PRODUCT_LIMITS.price ? price : null;
 }
 
@@ -142,7 +142,7 @@ export function parseProductForm(
   const priceText = text(formData, "price");
   const price = parsePrice(priceText);
   if (!priceText) errors.price = "Enter a price.";
-  else if (price === null) errors.price = "Enter a price in dollars, like 1250 or 1250.50.";
+  else if (price === null) errors.price = "Enter a price in pounds, like 1250 or 1250.50.";
 
   let slug: string | undefined;
   let stock: number | undefined;

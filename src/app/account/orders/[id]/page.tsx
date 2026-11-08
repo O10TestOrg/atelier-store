@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 // Private to the signed-in customer, so nothing is prerendered past the back
 // link: the session, params and order are all read behind <Suspense>.

@@ -24,8 +24,9 @@ export async function cancelCheckout(orderId: string) {
   const order = await getPendingOrder(orderId);
   if (!order) return false;
   if (!order.stripeCheckoutSessionId) {
-    // Session creation is still in flight, or failed and was already released.
-    return false;
+    // Session creation is still in flight, unless the hold has run out: then
+    // the process died before creating one, and nothing can pay for it.
+    return order.expiresAt < new Date() && (await releaseOrder(order.id, "expired"));
   }
 
   const stripe = getStripe();

@@ -23,17 +23,31 @@ export type Campaign = {
 export const unsplash = (id: string) =>
   `https://images.unsplash.com/photo-${id}?w=2400&q=80`;
 
-const wholeDollars = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-const withCents = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+// The store is UK-based: products are priced, and charged, in pounds.
+export const STORE_CURRENCY = "gbp";
 
-// Prices are stored in cents. Whole-dollar prices drop the ".00"; anything with
-// cents shows them, so the page always matches what Stripe charges.
-export const formatPrice = (price: number) =>
-  (price % 100 === 0 ? wholeDollars : withCents).format(price / 100);
+const formatters = new Map<string, { whole: Intl.NumberFormat; exact: Intl.NumberFormat }>();
+
+function formattersFor(currency: string) {
+  let pair = formatters.get(currency);
+  if (!pair) {
+    const options = { style: "currency", currency: currency.toUpperCase() } as const;
+    pair = {
+      whole: new Intl.NumberFormat("en-GB", { ...options, maximumFractionDigits: 0 }),
+      exact: new Intl.NumberFormat("en-GB", options),
+    };
+    formatters.set(currency, pair);
+  }
+  return pair;
+}
+
+// Prices are stored in minor units (pence). Whole-pound prices drop the ".00";
+// anything with pence shows them, so the page always matches what Stripe
+// charges. Orders pass their own currency: early orders were taken in USD.
+export const formatPrice = (price: number, currency: string = STORE_CURRENCY) => {
+  const { whole, exact } = formattersFor(currency);
+  return (price % 100 === 0 ? whole : exact).format(price / 100);
+};
 
 export const hero = {
   eyebrow: "Autumn–Winter 2026",
@@ -123,8 +137,8 @@ export const campaigns: Campaign[] = [
 
 export const services = [
   {
-    title: "Complimentary delivery",
-    description: "Free express shipping on every order, signed for on arrival.",
+    title: "Complimentary UK delivery",
+    description: "Free standard delivery in the UK, signed for on arrival.",
   },
   {
     title: "Returns within 30 days",

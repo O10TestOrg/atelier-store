@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const dateFormat = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
 
 export default function AccountDetailsPage() {
   return (

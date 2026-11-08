@@ -138,9 +138,12 @@ export default async function ProductPage({
             </Disclosure>
             <Disclosure title="Delivery & returns">
               <p>
-                Complimentary express delivery in 2–4 business days, signed for
-                on arrival. Unworn pieces can be returned or exchanged within 30
-                days, online or in store.
+                Complimentary UK delivery in 2–3 working days, or next working
+                day for £10, signed for on arrival. Express delivery to Europe
+                (3–5 working days) is £20, and to the rest of the world (4–7
+                working days) £30; import duties may be charged on delivery
+                outside the UK. Unworn pieces can be returned or exchanged within
+                30 days, online or in store.
               </p>
             </Disclosure>
             <Disclosure title="Care">

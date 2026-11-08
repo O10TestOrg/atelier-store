@@ -6,9 +6,16 @@ import { startCheckout } from "@/app/checkout/actions";
 import { notifyCartChange } from "@/components/bag-count";
 import { SignalMessage } from "@/components/signal";
 
-// `expectedTotal` is what the bag shows. The server re-prices from the
-// database and only uses it to refuse a total the shopper didn't see.
-export function CheckoutButton({ expectedTotal }: { expectedTotal: number }) {
+// `expectedTotal` (the items, before delivery) and `expectedCountry` are what
+// the bag shows. The server re-prices from the database and only uses them to
+// refuse a total or delivery country the shopper didn't see.
+export function CheckoutButton({
+  expectedTotal,
+  expectedCountry,
+}: {
+  expectedTotal: number;
+  expectedCountry: string;
+}) {
   const [result, formAction, pending] = useActionState<CartActionResult, FormData>(
     async (previous, formData) => {
       const result = await startCheckout(previous, formData);
@@ -25,6 +32,7 @@ export function CheckoutButton({ expectedTotal }: { expectedTotal: number }) {
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-3">
       <input type="hidden" name="expectedTotal" value={expectedTotal} />
+      <input type="hidden" name="expectedCountry" value={expectedCountry} />
       <button type="submit" className="btn btn-primary btn-block" disabled={pending || unavailable}>
         {pending && (
           <span

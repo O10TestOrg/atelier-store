@@ -71,6 +71,9 @@ export function SearchForm() {
       onChange={handleChange}
       onSubmit={handleSubmit}
       onClear={value ? clear : undefined}
+      // Arriving from the header's search icon: ready to type. Not when
+      // returning to results, where it would cover them with the keyboard.
+      autoFocus={!urlQuery}
     />
   );
 }
@@ -87,7 +90,9 @@ function SearchFormFields({
   onChange,
   onSubmit,
   onClear,
+  autoFocus = false,
 }: {
+  autoFocus?: boolean;
   value?: string;
   pending?: boolean;
   inputRef?: Ref<HTMLInputElement>;
@@ -104,6 +109,7 @@ function SearchFormFields({
         <SearchIcon className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 text-muted" />
         <input
           ref={inputRef}
+          autoFocus={autoFocus}
           id="search-query"
           name="q"
           type="search"
@@ -116,7 +122,7 @@ function SearchFormFields({
           spellCheck={false}
           enterKeyHint="search"
           maxLength={MAX_SEARCH_LENGTH}
-          className="block h-14 w-full border-0 border-b border-line-strong bg-transparent pr-12 pl-8 text-heading-sm outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
+          className="block h-14 w-full border-0 border-b border-line-strong bg-transparent pr-12 pl-8 text-heading-sm outline-none transition-shadow placeholder:text-muted focus-visible:shadow-[inset_0_-2px_0_var(--line-strong)] [&::-webkit-search-cancel-button]:hidden"
         />
         <div className="absolute top-1/2 right-0 flex -translate-y-1/2 items-center">
           {pending ? (

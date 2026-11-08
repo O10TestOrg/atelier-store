@@ -3,11 +3,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { BagCountSync } from "@/components/bag-count";
+import { ClearCheckoutParams, SettleCheckout } from "@/components/bag-checkout";
 import { BagLineControls } from "@/components/bag-line-controls";
 import { CheckoutButton } from "@/components/checkout-button";
-import { buildCart, readCart, reconcileCart, type BagLine } from "@/lib/cart";
+import { DeliveryCountrySelect } from "@/components/delivery-country-select";
+import { ANNOUNCER_ID, PAGE_HEADING_ID } from "@/components/focus-after-removal";
+import { buildCart, creditHeldStock, readCart, reconcileCart, type BagLine } from "@/lib/cart";
 import { formatPrice, services } from "@/lib/catalog";
+import { orderReference } from "@/lib/orders";
+import { readBrowserCheckout, type BrowserCheckout } from "@/lib/pending-checkout";
 import { getCartProducts } from "@/lib/products";
+import { COUNTRIES, formatDays, ratesFor, readDeliveryCountry } from "@/lib/shipping";
 import { Notice, SignalMessage } from "@/components/signal";
 
 export const metadata: Metadata = {
@@ -33,7 +39,10 @@ export default function BagPage({ searchParams }: PageProps<"/bag">) {
       </nav>
 
       <div className="container-page pb-section">
-        <h1 className="pt-2 text-heading lg:pt-6">Shopping bag</h1>
+        <h1 id={PAGE_HEADING_ID} tabIndex={-1} className="pt-2 text-heading lg:pt-6">
+          Shopping bag
+        </h1>
+        <p id={ANNOUNCER_ID} role="status" className="sr-only" />
         <Suspense fallback={<BagSkeleton />}>
           <CheckoutNotice searchParams={searchParams} />
           <BagContents />
@@ -44,21 +53,34 @@ export default function BagPage({ searchParams }: PageProps<"/bag">) {
 }
 
 // Reads the cookie and live prices and stock, so it renders per request.
+// Stock this browser's own open checkout holds counts as available here, so
+// pressing Back from Stripe doesn't show the shopper's pieces as sold out.
 async function BagContents() {
-  const lines = await readCart();
-  const products = await getCartProducts(lines.map((line) => line.slug));
+  const [lines, checkout, country] = await Promise.all([
+    readCart(),
+    readBrowserCheckout(),
+    readDeliveryCountry(),
+  ]);
+  const [delivery, ...upgrades] = ratesFor(country);
+  const live = await getCartProducts(lines.map((line) => line.slug));
+  const products = creditHeldStock(live, checkout?.state === "holding" ? checkout.held : []);
   const bag = buildCart(lines, products);
   // What the cookie will hold after the next cart action.
   const syncedCount = reconcileCart(lines, products).reduce(
     (total, line) => total + line.quantity,
     0,
   );
-  const countSync = <BagCountSync count={syncedCount} />;
+  const bagStatus = (
+    <>
+      <BagCountSync count={syncedCount} />
+      <OpenCheckoutNotice checkout={checkout} />
+    </>
+  );
 
   if (bag.lines.length === 0) {
     return (
       <div className="mt-8 flex flex-col items-center border-t py-section text-center">
-        {countSync}
+        {bagStatus}
         {bag.removedCount > 0 && <RemovedNotice count={bag.removedCount} />}
         <p className="text-heading-sm">Your bag is empty</p>
         <p className="mt-2 max-w-prose text-muted">
@@ -73,7 +95,7 @@ async function BagContents() {
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-12 lg:gap-12">
-      {countSync}
+      {bagStatus}
       <section aria-labelledby="bag-items" className="lg:col-span-8">
         <h2 id="bag-items" className="sr-only">
           Items
@@ -94,19 +116,47 @@ async function BagContents() {
           <h2 id="bag-summary" className="text-heading-sm">
             Summary
           </h2>
-          <dl className="mt-6 grid grid-cols-[1fr_auto] gap-y-3 text-body-sm">
+          <div className="mt-6 text-body-sm">
+            <DeliveryCountrySelect
+              countries={COUNTRIES.map(({ code, name }) => ({ code, name }))}
+              current={country.code}
+            />
+          </div>
+          <dl className="mt-6 grid grid-cols-[1fr_auto] gap-x-4 gap-y-3 text-body-sm">
             <dt className="text-muted">
               Subtotal ({bag.itemCount} {bag.itemCount === 1 ? "item" : "items"})
             </dt>
             <dd className="text-right tabular-nums">{formatPrice(bag.subtotal)}</dd>
-            <dt className="text-muted">Delivery</dt>
-            <dd className="text-right">Complimentary</dd>
+            <dt className="text-muted">
+              {delivery.name}
+              <span className="block text-meta">{formatDays(delivery)}</span>
+            </dt>
+            <dd className="text-right tabular-nums">
+              {delivery.amount === 0 ? "Complimentary" : formatPrice(delivery.amount)}
+            </dd>
           </dl>
           <div className="mt-6 flex items-baseline justify-between border-t border-line-strong pt-4">
             <p>Total</p>
-            <p className="text-heading-sm tabular-nums">{formatPrice(bag.subtotal)}</p>
+            <p className="text-heading-sm tabular-nums">
+              {formatPrice(bag.subtotal + (bag.subtotal > 0 ? delivery.amount : 0))}
+            </p>
           </div>
-          <CheckoutButton expectedTotal={bag.subtotal} />
+          <ul className="mt-3 flex flex-col gap-1 text-meta">
+            {upgrades.map((rate) => (
+              <li key={rate.name}>
+                {rate.name} delivery available at checkout for {formatPrice(rate.amount)}.
+              </li>
+            ))}
+            {country.zone === "uk" ? (
+              <li>Prices include VAT.</li>
+            ) : (
+              <li>
+                Orders to {country.name} may be charged import duties and taxes on delivery.
+                These are payable by the recipient.
+              </li>
+            )}
+          </ul>
+          <CheckoutButton expectedTotal={bag.subtotal} expectedCountry={country.code} />
           <ul className="mt-6 flex flex-col gap-1 text-meta">
             {services.slice(0, 3).map((service) => (
               <li key={service.title}>{service.title}</li>
@@ -175,20 +225,56 @@ function BagItem({ line }: { line: BagLine }) {
   );
 }
 
-// Shown when the shopper comes back from Stripe without paying. Their bag is
-// untouched; /checkout/cancel has already released the stock it held.
+// What this browser's last checkout is doing. Holding: the shopper went Back
+// from Stripe, and checking out again releases that hold first. Placed: they
+// paid but never came back through /checkout/return, so settle it now.
+function OpenCheckoutNotice({ checkout }: { checkout: BrowserCheckout }) {
+  if (checkout?.state === "holding") {
+    return (
+      <Notice tone="info" role="status" className="mb-6 lg:col-span-12">
+        Your checkout is still open, so we’re holding its pieces for you. Checking out
+        again starts a new one.
+      </Notice>
+    );
+  }
+  if (checkout?.state === "placed") {
+    return (
+      <Notice tone="success" role="status" className="mb-6 lg:col-span-12">
+        <SettleCheckout />
+        Order {orderReference(checkout.order)} has been placed. Updating your bag…
+      </Notice>
+    );
+  }
+  return null;
+}
+
+const SESSION_ID = /^cs_[A-Za-z0-9_]{1,250}$/;
+
+// One-off messages after a round trip to Stripe, from /checkout/cancel,
+// /checkout/return or `settleCheckout`. The stock and bag are already settled.
 async function CheckoutNotice({ searchParams }: Pick<PageProps<"/bag">, "searchParams">) {
-  const { checkout } = await searchParams;
+  const { checkout, session_id: sessionId } = await searchParams;
   const notice =
     checkout === "canceled"
       ? { tone: "info" as const, message: "Checkout was cancelled. Your bag is just as you left it." }
       : checkout === "expired"
         ? { tone: "warning" as const, message: "Your checkout session timed out. Please check out again." }
-        : null;
+        : checkout === "placed"
+          ? { tone: "success" as const, message: "Your order has been placed, and its pieces have left your bag." }
+          : null;
   if (!notice) return null;
   return (
     <Notice tone={notice.tone} role="status" className="mt-8">
+      <ClearCheckoutParams />
       {notice.message}
+      {checkout === "placed" && typeof sessionId === "string" && SESSION_ID.test(sessionId) && (
+        <>
+          {" "}
+          <Link href={`/checkout/success?session_id=${sessionId}`} className="link">
+            View order
+          </Link>
+        </>
+      )}
     </Notice>
   );
 }

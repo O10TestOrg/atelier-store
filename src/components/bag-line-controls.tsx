@@ -3,6 +3,7 @@
 import { useId, useOptimistic, useState, useTransition } from "react";
 import { removeFromCart, updateQuantity } from "@/app/bag/actions";
 import { notifyCartChange } from "@/components/bag-count";
+import { focusAfterRemoval } from "@/components/focus-after-removal";
 import { SignalMessage } from "@/components/signal";
 
 type Props = {
@@ -36,6 +37,7 @@ export function BagLineControls({ slug, name, quantity, maxQuantity }: Props) {
       const result = await removeFromCart(slug);
       notifyCartChange();
       if (result && !result.ok) setError(result.message);
+      else focusAfterRemoval(`${name} removed from your bag.`);
     });
   }
 

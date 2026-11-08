@@ -3,6 +3,7 @@
 import {
   MAX_LINES,
   MAX_QUANTITY,
+  creditHeldStock,
   isValidSlug,
   maxQuantity,
   readCart,
@@ -10,7 +11,9 @@ import {
   writeCart,
   type CartLine,
 } from "@/lib/cart";
+import { readBrowserCheckout } from "@/lib/pending-checkout";
 import { getCartProducts, type Product } from "@/lib/products";
+import { findCountry, writeDeliveryCountry } from "@/lib/shipping";
 
 // The bag belongs to the browser, so these don't require a session. Every
 // argument is untrusted: validate it before reading the cookie or the DB.
@@ -19,12 +22,15 @@ export type CartActionResult = { ok: boolean; message: string } | null;
 
 // Reads the bag and fresh stock for it (plus `extraSlug`), and reconciles the
 // stored lines so every write also persists clamping and drops deleted items.
+// Stock held by this browser's own open checkout counts as available, as it
+// does on the bag page.
 async function loadCart(extraSlug?: string) {
   const stored = await readCart();
   const slugs = stored.map((line) => line.slug);
   if (extraSlug && !slugs.includes(extraSlug)) slugs.push(extraSlug);
 
-  const products = await getCartProducts(slugs);
+  const [live, checkout] = await Promise.all([getCartProducts(slugs), readBrowserCheckout()]);
+  const products = creditHeldStock(live, checkout?.state === "holding" ? checkout.held : []);
   const bySlug = new Map(products.map((product) => [product.slug, product]));
   return { lines: reconcileCart(stored, products), bySlug };
 }
@@ -60,11 +66,17 @@ export async function addToCart(slug: string): Promise<CartActionResult> {
     return { ok: false, message: "Your bag is full. Remove a piece to add another." };
   }
 
+  const quantity = (existing?.quantity ?? 0) + 1;
   const next: CartLine[] = existing
-    ? lines.map((line) => (line.slug === slug ? { slug, quantity: line.quantity + 1 } : line))
-    : [...lines, { slug, quantity: 1 }];
+    ? lines.map((line) => (line.slug === slug ? { slug, quantity } : line))
+    : [...lines, { slug, quantity }];
   await writeCart(next);
-  return { ok: true, message: "Added to your bag." };
+  // The count makes each message different, so screen readers announce every
+  // add, not just the first.
+  return {
+    ok: true,
+    message: quantity === 1 ? "Added to your bag." : `Added to your bag. You now have ${quantity}.`,
+  };
 }
 
 // A quantity of 0 removes the line. Requests above stock are clamped.
@@ -110,4 +122,13 @@ export async function removeFromCart(slug: string): Promise<CartActionResult> {
   const { lines } = await loadCart();
   await writeCart(lines.filter((line) => line.slug !== slug));
   return { ok: true, message: "Removed from your bag." };
+}
+
+// Where the bag prices delivery to, and the only country checkout will accept
+// an address in. Unknown codes are refused rather than falling back silently.
+export async function setDeliveryCountry(code: string): Promise<CartActionResult> {
+  const country = findCountry(code);
+  if (!country) return { ok: false, message: "We don’t deliver there yet." };
+  await writeDeliveryCountry(country);
+  return { ok: true, message: `Delivering to ${country.name}.` };
 }

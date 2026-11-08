@@ -115,6 +115,27 @@ export function buildCart(lines: CartLine[], products: Product[]): Bag {
   return bag;
 }
 
+// Adds back the stock this browser's own open checkout is holding, so the
+// pieces it reserved don't show as sold out to the shopper who reserved them.
+// Checking out again releases that hold first (`startCheckout`).
+export function creditHeldStock(products: Product[], held: CartLine[]): Product[] {
+  if (held.length === 0) return products;
+  const heldBySlug = new Map(held.map((line) => [line.slug, line.quantity]));
+  return products.map((product) => {
+    const quantity = heldBySlug.get(product.slug);
+    return quantity ? { ...product, stock: product.stock + quantity } : product;
+  });
+}
+
+// Takes what an order bought out of the bag, keeping anything added since.
+export function subtractLines(lines: CartLine[], bought: CartLine[]): CartLine[] {
+  const boughtBySlug = new Map(bought.map((line) => [line.slug, line.quantity]));
+  return lines.flatMap((line) => {
+    const quantity = line.quantity - (boughtBySlug.get(line.slug) ?? 0);
+    return quantity > 0 ? [{ slug: line.slug, quantity }] : [];
+  });
+}
+
 // Drops lines for deleted products and clamps the rest to stock. Out-of-stock
 // lines are kept, so the bag can say so and the item can come back.
 export function reconcileCart(lines: CartLine[], products: Product[]): CartLine[] {

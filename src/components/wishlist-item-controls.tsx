@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { addToCart } from "@/app/bag/actions";
 import { clearWishlist, moveToBag, removeFromWishlist } from "@/app/wishlist/actions";
 import { notifyCartChange } from "@/components/bag-count";
+import { focusAfterRemoval } from "@/components/focus-after-removal";
 import { notifyWishlistChange } from "@/components/wishlist-state";
 import { SignalMessage } from "@/components/signal";
 
@@ -42,13 +43,15 @@ export function WishlistItemControls({
   const move = () =>
     run(async () => {
       const result = await moveToBag(slug);
-      // A successful move removes the item, so only failures need a message.
+      // A successful move removes the item, so its message goes to the page.
+      if (result.ok) focusAfterRemoval(`${name} moved to your bag.`);
       return result.ok ? null : { ok: false, text: result.message, toBag: false };
     });
 
   const remove = () =>
     run(async () => {
       const result = await removeFromWishlist(slug);
+      if (result.ok) focusAfterRemoval(`${name} removed from your wishlist.`);
       return result.ok ? null : { ok: false, text: result.message, toBag: false };
     });
 

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Orders",
 };
 
-const dateFormat = new Intl.DateTimeFormat("en-US", {
+const dateFormat = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "medium",
   timeStyle: "short",
 });
@@ -120,7 +120,7 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
                       <OrderStatus order={order} variant="admin" />
                     </td>
                     <td className="py-4 pr-4 text-right tabular-nums">{itemCount}</td>
-                    <td className="py-4 text-right tabular-nums">{formatPrice(order.total)}</td>
+                    <td className="py-4 text-right tabular-nums">{formatPrice(order.total, order.currency)}</td>
                   </tr>
                 );
               })}
