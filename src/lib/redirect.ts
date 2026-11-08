@@ -1,5 +1,5 @@
 // Placeholder origin for parsing: only the path that comes back is used.
-const BASE = "http://atelier.invalid";
+const BASE = "https://atelier.invalid";
 
 // Only same-origin paths, so `?next=` can't send users off-site. Parsed the
 // way the browser will parse it, since URL parsing strips tabs and newlines
