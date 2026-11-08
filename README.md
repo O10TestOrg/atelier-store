@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Atelier
 
-## Getting Started
+An online store: catalogue, bag, wishlist, Stripe-hosted checkout, customer accounts and an admin area.
 
-First, run the development server:
+Next.js 16 (App Router) · React 19 · Tailwind v4 · Drizzle ORM on Neon Postgres · Better Auth · Stripe. Use **pnpm**.
+
+Conventions, architecture and gotchas are in [CLAUDE.md](CLAUDE.md). Read it before changing code.
+
+## Quick start
+
+1. Install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Copy `.env.example` to `.env.local` and fill in:
+
+   | Variable | What it is |
+   | --- | --- |
+   | `DATABASE_URL` | Neon Postgres connection string |
+   | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
+   | `BETTER_AUTH_URL` | The app's origin, e.g. `http://localhost:3000` |
+   | `STRIPE_SECRET_KEY` | A restricted `rk_` key from a Stripe sandbox |
+   | `STRIPE_WEBHOOK_SECRET` | Printed by `stripe listen` (below) |
+   | `APP_URL` | The app's origin, used for Stripe return URLs |
+
+3. Create the tables and load the sample catalogue:
+
+   ```bash
+   pnpm db:migrate
+   pnpm db:seed
+   ```
+
+4. Start the dev server at <http://localhost:3000>:
+
+   ```bash
+   pnpm dev
+   ```
+
+`pnpm build` reads products from the database, so migrate and seed before building.
+
+## Stripe webhooks in development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired --forward-to localhost:3000/api/stripe/webhook
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy the `whsec_` secret it prints into `STRIPE_WEBHOOK_SECRET`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Admin access
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sign up in the app, then give the account the admin role:
 
-## Learn More
+```bash
+pnpm db:make-admin you@example.com
+pnpm db:make-admin you@example.com --revoke   # remove it again
+```
 
-To learn more about Next.js, take a look at the following resources:
+The admin area is at `/admin`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Script | Does |
+| --- | --- |
+| `pnpm dev` / `pnpm build` / `pnpm start` | Run, build or serve the app |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | TypeScript, no database needed |
+| `pnpm test` | Unit tests for the cart, price and redirect helpers |
+| `pnpm db:generate` / `pnpm db:migrate` | Create and apply migrations from `src/db/schema.ts` |
+| `pnpm db:push` | Sync the schema straight to the database (quick dev only) |
+| `pnpm db:studio` | Browse the database |
+| `pnpm db:seed` | Upsert the sample catalogue |
+| `pnpm db:make-admin <email>` | Grant (or `--revoke`) the admin role |

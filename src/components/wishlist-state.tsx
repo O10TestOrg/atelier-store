@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { HeartIcon } from "@/components/icons";
+import { useCookie, writeCookie } from "@/components/use-cookie";
+import { WISHLIST_COOKIE, WISHLIST_MAX_AGE } from "@/lib/cookies";
 
-// Written by the wishlist actions and the sign-in hook (src/lib/wishlist.ts).
-// It's display-only: the server never trusts it.
-const WISHLIST_COOKIE = "wishlist";
+// The cookie is written by the wishlist actions and the sign-in hook
+// (src/lib/wishlist.ts). It's display-only: the server never trusts it.
 const CHANGE_EVENT = "wishlistchange";
-
-// The server sets the cookie as Secure in production, and browsers won't let a
-// non-Secure write replace it.
-const secure = () => (location.protocol === "https:" ? "; secure" : "");
 
 // Call after a wishlist action resolves so hearts and the badge re-read it.
 export const notifyWishlistChange = () => window.dispatchEvent(new Event(CHANGE_EVENT));
@@ -18,24 +15,8 @@ export const notifyWishlistChange = () => window.dispatchEvent(new Event(CHANGE_
 // Drops the cookie on sign-out, so a shared browser doesn't keep showing the
 // previous account's hearts.
 export function clearWishlistCookie() {
-  document.cookie = `${WISHLIST_COOKIE}=; path=/; max-age=0${secure()}`;
+  writeCookie(WISHLIST_COOKIE, "", 0);
   notifyWishlistChange();
-}
-
-function subscribe(onChange: () => void) {
-  window.addEventListener(CHANGE_EVENT, onChange);
-  // Another tab may have changed the wishlist.
-  window.addEventListener("focus", onChange);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, onChange);
-    window.removeEventListener("focus", onChange);
-  };
-}
-
-// Returns the raw string so useSyncExternalStore can compare snapshots.
-function readCookie() {
-  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${WISHLIST_COOKIE}=([^;]*)`));
-  return match?.[1] ?? "";
 }
 
 function parse(raw: string): string[] {
@@ -48,7 +29,7 @@ function parse(raw: string): string[] {
   }
 }
 
-const useWishlistCookie = () => useSyncExternalStore(subscribe, readCookie, () => "");
+const useWishlistCookie = () => useCookie(WISHLIST_COOKIE, CHANGE_EVENT);
 
 // Prerendered pages show every heart empty; saved ones fill once hydrated.
 export function useIsSaved(slug: string) {
@@ -91,10 +72,7 @@ export function WishlistCount() {
 export function WishlistSync({ slugs }: { slugs: string[] }) {
   const value = JSON.stringify(slugs);
   useEffect(() => {
-    document.cookie =
-      value !== "[]"
-        ? `${WISHLIST_COOKIE}=${encodeURIComponent(value)}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax${secure()}`
-        : `${WISHLIST_COOKIE}=; path=/; max-age=0${secure()}`;
+    writeCookie(WISHLIST_COOKIE, value !== "[]" ? encodeURIComponent(value) : "", WISHLIST_MAX_AGE);
     notifyWishlistChange();
   }, [value]);
   return null;

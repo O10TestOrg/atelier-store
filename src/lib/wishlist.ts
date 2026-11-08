@@ -16,18 +16,12 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { products, wishlistItems } from "@/db/schema";
 import { isValidSlug } from "@/lib/cart";
+import { WISHLIST_COOKIE, WISHLIST_MAX_AGE, baseCookieOptions } from "@/lib/cookies";
 
-// Keep in sync with `wishlist-state.tsx`.
-export const WISHLIST_COOKIE = "wishlist";
 // Keeps the cookie well under the 4 KB limit.
 export const MAX_WISHLIST = 50;
 
-export const wishlistCookieOptions = {
-  sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-  maxAge: 60 * 60 * 24 * 365,
-} as const;
+export const wishlistCookieOptions = { ...baseCookieOptions, maxAge: WISHLIST_MAX_AGE };
 
 // Bad JSON or bad entries yield an empty or shorter list rather than an error.
 export function parseWishlist(value: string | null | undefined): string[] {

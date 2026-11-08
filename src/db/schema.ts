@@ -1,4 +1,3 @@
-// Drizzle table definitions go here.
 // Better Auth tables were generated with `pnpm dlx auth generate`; re-run it
 // after changing auth plugins or fields and merge the diff by hand.
 import { relations, sql } from "drizzle-orm";
