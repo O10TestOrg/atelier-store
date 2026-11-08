@@ -43,6 +43,13 @@
       "when": 1794144870498,
       "tag": "0005_fuzzy_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794147647562,
+      "tag": "0006_purple_boom_boom",
+      "breakpoints": true
     }
   ]
 }

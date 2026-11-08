@@ -28,7 +28,7 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 
 - The bag is cookie-only (no table): an httpOnly `cart` cookie of `{ slug, quantity }` pairs, read and written through `src/lib/cart.ts`. Never store prices or names in it; `getCartProducts` in `src/lib/products.ts` reads them fresh and is deliberately uncached, so render its callers inside `<Suspense>`.
 - Mutations are the Server Actions in `src/app/bag/actions.ts`. They need no session, treat every argument and the cookie as untrusted, and clamp quantities to live stock and `MAX_QUANTITY`. Adding to the bag doesn't reserve stock; checkout does (below).
-- `/products/[slug]` and `/collections/[slug]` are `ensureStatic = "navigation"`, so the shared header can't read cookies on the server. The bag badge reads a display-only `cart_count` cookie on the client (`src/components/bag-count.tsx`). Client code that calls a cart action must call `notifyCartChange()` afterwards.
+- `/products/[slug]` and `/collections/[slug]` are `ensureStatic = "navigation"`, so the shared header can't read cookies on the server. Its nav and the home page's category tiles come from `getCategories()` / `getCategoryTiles()` (cached), never hard-coded slugs; the mobile menu (`MobileMenu`) closes on link tap, Escape and path change. Collection sorting is client-side (`SortableProductGrid`) for the same reason. The bag badge reads a display-only `cart_count` cookie on the client (`src/components/bag-count.tsx`). Client code that calls a cart action must call `notifyCartChange()` afterwards.
 
 ## Wishlist
 
@@ -50,6 +50,15 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 - `/checkout/success` shows the address, email and items only to the signed-in owner or the browser holding the `checkout_receipt` cookie set by `/checkout/return`.
 - Local webhooks: `stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired --forward-to localhost:3000/api/stripe/webhook` (newer CLIs require `--events`).
 
+## Email & accounts
+
+- Mail goes through `sendEmail` / `trySendEmail` and `composeEmail` in `src/lib/email.ts` (Resend). Without `RESEND_API_KEY` and `EMAIL_FROM` it prints to the console in development and logs an error in production. Send after the response (`after()`, or Better Auth's `backgroundTasks`, which is wired to `after`), so timing doesn't reveal whether an account or order exists. `CLIENT_SERVICES_EMAIL` in `src/lib/catalog.ts` is the contact address and reply-to; `/help/contact` shows it.
+- Email verification is soft: sign-up sends a link (`callbackURL` `/account?verified=1`) and the account pages nudge until it's clicked (`EmailVerificationNotice`). `afterEmailVerification`, and sign-in for verified users, call `claimGuestOrders`, which moves guest orders with that email into the account. Never claim orders by an unverified email.
+- `/account/details` changes name, email (Better Auth `changeEmail`: the link goes to the new address), password (revokes other sessions) and deletes the account (customers only; `beforeDelete` refuses admins). Orders survive deletion with `user_id` null.
+- Guests find orders at `/orders/lookup` (reference + email). `requestOrderLink` always gives the same reply and emails a signed 72-hour link (`src/lib/order-link.ts`, HMAC keyed from `BETTER_AUTH_SECRET`) to `/orders/view`. Only orders `isVisibleToCustomer` are found.
+- Back-in-stock alerts (`restock_alerts`, `src/lib/restock-alerts.ts`) are asked for on sold-out product pages (`requestRestockAlert`). `sendRestockAlerts` claims due rows before sending, so concurrent callers never double-send. It runs after an admin restock, after the webhook releases a hold, and in the cron sweep, which also prunes sent rows after 30 days.
+- The per-IP limiter in `src/lib/checkout-limit.ts` (`consumeRateLimit(scope, limit)`) also covers order lookups and restock alerts.
+
 ## Delivery
 
 - Zones, rates and countries live in `src/lib/shipping.ts`. Hosted Checkout can't reprice delivery for the address typed, so the shopper picks a country in the bag (httpOnly `delivery_country` cookie, default GB). `startCheckout` limits `allowed_countries` to that one country and offers its zone's rates, cheapest first, because Stripe preselects the first one and the bag's total assumes it.
@@ -69,7 +78,7 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 
 ## Environment
 
-Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout, and `CRON_SECRET` for the hold sweep. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
+Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout, `CRON_SECRET` for the hold sweep, and `RESEND_API_KEY` + `EMAIL_FROM` for email. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
 
 ## Git
 

@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import {
+  ChangeEmailForm,
+  ChangeNameForm,
+  ChangePasswordForm,
+  DeleteAccountForm,
+} from "@/components/account-details-forms";
+import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { Notice } from "@/components/signal";
 import { requireUser } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -10,7 +18,7 @@ export const metadata: Metadata = {
 
 const dateFormat = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
 
-export default function AccountDetailsPage() {
+export default function AccountDetailsPage({ searchParams }: PageProps<"/account/details">) {
   return (
     <>
       <header>
@@ -19,13 +27,13 @@ export default function AccountDetailsPage() {
       </header>
 
       <Suspense fallback={<DetailsFallback />}>
-        <Details />
+        <Details searchParams={searchParams} />
       </Suspense>
 
       <p className="mt-8 max-w-prose text-body-sm text-muted">
-        To change your name or email address, please{" "}
+        Need help with your account?{" "}
         <Link href="/help/contact" className="link text-foreground">
-          contact client services
+          Contact client services
         </Link>
         .
       </p>
@@ -33,37 +41,39 @@ export default function AccountDetailsPage() {
   );
 }
 
-const rows = ["Name", "Email", "Member since"] as const;
-
-async function Details() {
+async function Details({ searchParams }: Pick<PageProps<"/account/details">, "searchParams">) {
   const user = await requireUser("/account/details");
-  const values: Record<(typeof rows)[number], string> = {
-    Name: user.name,
-    Email: user.email,
-    "Member since": dateFormat.format(user.createdAt),
-  };
+  // Set by the link that confirms a new email address.
+  const emailChanged = (await searchParams).email === "changed";
 
   return (
-    <dl className="mt-10 border-t">
-      {rows.map((label) => (
-        <div key={label} className="flex flex-col gap-1 border-b py-4 sm:flex-row sm:gap-6">
-          <dt className="text-meta sm:w-40 sm:shrink-0">{label}</dt>
-          <dd className="break-all">{values[label]}</dd>
-        </div>
-      ))}
-    </dl>
+    <>
+      {emailChanged && (
+        <Notice tone="success" role="status" className="mt-8">
+          Your email address is now {user.email}.
+        </Notice>
+      )}
+      <EmailVerificationNotice returnTo="/account/details" />
+      <p className="mt-8 text-meta">Member since {dateFormat.format(user.createdAt)}</p>
+      <div className="mt-2 border-t">
+        <ChangeNameForm name={user.name} />
+        <ChangeEmailForm email={user.email} />
+        <ChangePasswordForm />
+        {user.role !== "admin" && <DeleteAccountForm />}
+      </div>
+    </>
   );
 }
 
 function DetailsFallback() {
   return (
-    <dl className="mt-10 border-t" aria-busy="true">
-      {rows.map((label) => (
-        <div key={label} className="flex flex-col gap-1 border-b py-4 sm:flex-row sm:gap-6">
-          <dt className="text-meta sm:w-40 sm:shrink-0">{label}</dt>
-          <dd className="h-6 w-48 max-w-full animate-pulse bg-surface" />
+    <div className="mt-10 flex flex-col gap-8 border-t pt-8" aria-busy="true">
+      {[0, 1, 2].map((key) => (
+        <div key={key} className="flex max-w-md flex-col gap-3">
+          <div className="h-6 w-32 animate-pulse bg-surface" />
+          <div className="h-12 animate-pulse bg-surface" />
         </div>
       ))}
-    </dl>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AccountLink } from "@/components/account-link";
 import { BagCount } from "@/components/bag-count";
+import { MobileMenu } from "@/components/mobile-menu";
 import { SearchLink } from "@/components/search-link";
 import { WishlistCount, WishlistHeartIcon } from "@/components/wishlist-state";
 import {
@@ -10,22 +11,24 @@ import {
   SearchIcon,
   UserIcon,
 } from "@/components/icons";
+import { categoryHref } from "@/lib/catalog";
+import { getCategories } from "@/lib/products";
 
-const navigation = [
-  { label: "Women", href: "/women" },
-  { label: "Men", href: "/men" },
-  { label: "Leather Goods", href: "/collections/leather-goods" },
-  { label: "Shoes", href: "/collections/shoes" },
-  { label: "Jewelry", href: "/collections/jewelry" },
-];
+// Built from the categories table (cached, so the header stays in the static
+// shell), so every link has a page behind it.
+export async function SiteHeader() {
+  const categories = await getCategories();
+  const navigation = [
+    { label: "New in", href: "/collections/new" },
+    ...categories.map((category) => ({ label: category.name, href: categoryHref(category.slug) })),
+  ];
 
-export function SiteHeader() {
   return (
     <header className="header-bar">
       <div className="container-page grid h-full grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center">
           {/* Mobile menu: a native disclosure, so it works without client JS. */}
-          <details className="group lg:hidden">
+          <MobileMenu className="group lg:hidden">
             <summary
               className="btn-icon -ml-3 list-none [&::-webkit-details-marker]:hidden"
               aria-label="Menu"
@@ -53,7 +56,7 @@ export function SiteHeader() {
                 </Link>
               </div>
             </nav>
-          </details>
+          </MobileMenu>
 
           <nav aria-label="Main" className="hidden lg:block">
             <ul className="flex gap-6 text-body-sm">

@@ -68,6 +68,16 @@ export async function getCheckoutProducts(slugs: string[]): Promise<CheckoutProd
     .where(inArray(products.slug, slugs));
 }
 
+// Live stock for one product, for actions that must not trust the cached page.
+export async function getProductAvailability(slug: string) {
+  const [row] = await db
+    .select({ id: products.id, name: products.name, stock: products.stock })
+    .from(products)
+    .where(eq(products.slug, slug))
+    .limit(1);
+  return row;
+}
+
 export async function getProductSlugs() {
   "use cache";
   cacheLife("hours");
@@ -117,6 +127,27 @@ export async function getCategories(): Promise<Category[]> {
     .select({ name: categories.name, slug: categories.slug })
     .from(categories)
     .orderBy(asc(categories.id));
+}
+
+export type CategoryTile = Category & { image: string; imageAlt: string };
+
+// Each category that has products, pictured by its newest piece, for the home
+// page. Empty categories are left out rather than shown without a photo.
+export async function getCategoryTiles(): Promise<CategoryTile[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("products");
+
+  return db
+    .selectDistinctOn([categories.id], {
+      name: categories.name,
+      slug: categories.slug,
+      image: products.image,
+      imageAlt: products.imageAlt,
+    })
+    .from(categories)
+    .innerJoin(products, eq(products.categoryId, categories.id))
+    .orderBy(asc(categories.id), desc(products.isNew), desc(products.createdAt), desc(products.id));
 }
 
 export async function getCategory(slug: string): Promise<Category | undefined> {

@@ -15,6 +15,7 @@ import {
   pruneStripeEvents,
   releaseOrder,
 } from "@/lib/orders";
+import { pruneRestockAlerts, sendRestockAlerts } from "@/lib/restock-alerts";
 import { getStripe } from "@/lib/stripe";
 
 // Ends a checkout the shopper walked away from and puts its stock back. Stock
@@ -85,9 +86,12 @@ export async function lazyReleaseLapsedHolds() {
 }
 
 // The scheduled sweep (`/api/cron/release-holds`): a bigger batch, plus
-// pruning the Stripe event ledger and stale checkout rate-limit windows.
+// pruning the Stripe event ledger and stale checkout rate-limit windows. It
+// also sends back-in-stock alerts, including for stock any other path put
+// back (a canceled checkout, the lazy sweep).
 export async function scheduledSweep() {
   const released = await releaseLapsedHolds(100);
-  await Promise.all([pruneStripeEvents(), pruneCheckoutAttempts()]);
+  await sendRestockAlerts();
+  await Promise.all([pruneStripeEvents(), pruneCheckoutAttempts(), pruneRestockAlerts()]);
   return released;
 }

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { AddToBagButton } from "@/components/add-to-bag-button";
 import { PlusIcon } from "@/components/icons";
 import { ProductCard } from "@/components/product-card";
+import { RestockAlertForm } from "@/components/restock-alert-form";
 import { StockStatus } from "@/components/stock-status";
 import { WishlistButton } from "@/components/wishlist-button";
 import {
@@ -107,6 +108,7 @@ export default async function ProductPage({
                 <button type="button" className="btn btn-primary btn-block" disabled>
                   Out of stock
                 </button>
+                <RestockAlertForm slug={product.slug} name={product.name} />
                 <WishlistButton slug={product.slug} name={product.name} variant="block" />
                 <Link href="/help/contact" className="btn btn-secondary btn-block">
                   Contact an advisor

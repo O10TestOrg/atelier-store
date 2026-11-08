@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { requireUser } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function AccountPage() {
+export default function AccountPage({ searchParams }: PageProps<"/account">) {
   return (
     <>
       <header>
@@ -21,6 +22,10 @@ export default function AccountPage() {
         </p>
       </header>
 
+      <Suspense>
+        <EmailVerificationNotice returnTo="/account" searchParams={searchParams} />
+      </Suspense>
+
       <ul className="mt-10 grid gap-px border bg-line sm:grid-cols-2">
         <Tile
           href="/account/orders"
@@ -30,7 +35,7 @@ export default function AccountPage() {
         <Tile
           href="/account/details"
           title="Account details"
-          description="Your name, email address and membership."
+          description="Your name, email address and password."
         />
         <Tile
           href="/collections/new"

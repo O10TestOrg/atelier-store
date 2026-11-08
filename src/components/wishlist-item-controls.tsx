@@ -108,22 +108,49 @@ export function WishlistItemControls({
   );
 }
 
+// Two steps, so one stray click can't empty a signed-in wishlist.
 export function ClearWishlistButton() {
   const [pending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        className="link-quiet text-body-sm"
+      >
+        Clear all
+      </button>
+    );
+  }
 
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() =>
-        startTransition(async () => {
-          await clearWishlist();
-          notifyWishlistChange();
-        })
-      }
-      className="link-quiet text-body-sm disabled:text-muted"
-    >
-      {pending ? "Clearing…" : "Clear all"}
-    </button>
+    <span role="group" aria-label="Clear wishlist" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-sm">
+      <span className="text-muted">Remove every piece?</span>
+      <button
+        type="button"
+        autoFocus
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            await clearWishlist();
+            notifyWishlistChange();
+            focusAfterRemoval("Your wishlist has been cleared.");
+          })
+        }
+        className="link-quiet disabled:text-muted"
+      >
+        {pending ? "Clearing…" : "Yes, clear all"}
+      </button>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setConfirming(false)}
+        className="link-quiet disabled:text-muted"
+      >
+        Keep them
+      </button>
+    </span>
   );
 }

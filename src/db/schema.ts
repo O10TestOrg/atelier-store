@@ -12,6 +12,7 @@ import {
   text,
   jsonb,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -289,6 +290,31 @@ export const wishlistItems = pgTable(
       .defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.userId, table.productId] })],
+);
+
+// --- Back-in-stock alerts ----------------------------------------------------
+// One row per email per sold-out product, asked for on the product page. The
+// email goes once the product has stock again; `notified_at` marks it sent.
+// Written through `src/lib/restock-alerts.ts`; sent rows are pruned after 30 days.
+
+export const restockAlerts = pgTable(
+  "restock_alerts",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    // Stored lowercased, so the unique index catches repeats.
+    email: text("email").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("restock_alerts_product_id_email_idx").on(table.productId, table.email),
+    index("restock_alerts_notified_at_idx").on(table.notifiedAt),
+  ],
 );
 
 export const userRelations = relations(user, ({ many }) => ({
