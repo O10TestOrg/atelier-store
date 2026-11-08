@@ -8,7 +8,7 @@
 // overselling under concurrent checkouts.
 import "server-only";
 import type Stripe from "stripe";
-import { and, count, desc, eq, isNotNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   orderItems,
@@ -125,6 +125,25 @@ export async function releaseOrder(
   return Number(result.rows[0]?.released ?? 0) > 0;
 }
 
+// Pending orders whose hold lapsed more than `graceMinutes` ago, oldest first,
+// for the sweep in `src/lib/order-sweep.ts`. The grace lets Stripe's own
+// expiry webhook win the normal case. Orders completed on Stripe (they have a
+// shipping address) are left alone: async payments stay pending for days.
+export async function getLapsedPendingOrders(limit: number, graceMinutes = 5) {
+  return db
+    .select({ id: orders.id, stripeCheckoutSessionId: orders.stripeCheckoutSessionId })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.status, "pending"),
+        lt(orders.expiresAt, sql`now() - make_interval(mins => ${graceMinutes})`),
+        isNull(orders.shippingAddress),
+      ),
+    )
+    .orderBy(asc(orders.expiresAt))
+    .limit(limit);
+}
+
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function getPendingOrder(orderId: string) {
@@ -228,6 +247,14 @@ export async function markEventProcessed(event: Stripe.Event) {
     .insert(stripeEvents)
     .values({ id: event.id, type: event.type })
     .onConflictDoNothing();
+}
+
+// Stripe stops redelivering an event after three days, so a month of ledger
+// is plenty.
+export async function pruneStripeEvents(days = 30) {
+  await db
+    .delete(stripeEvents)
+    .where(lt(stripeEvents.processedAt, sql`now() - make_interval(days => ${days})`));
 }
 
 export async function getOrderBySessionId(sessionId: string): Promise<Order | undefined> {

@@ -18,7 +18,7 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 
 - `src/db/schema.ts` is the single source of truth: `db` (`src/db/index.ts`), the Better Auth Drizzle adapter (`src/lib/auth.ts`) and `drizzle-kit` all read it.
 - The Better Auth tables (`user`, `session`, `account`, `verification`, plus the `role` column) are in the schema and migration `0001`. Re-run `pnpm dlx auth generate` only after changing auth plugins or fields, merge the diff by hand, then run `pnpm db:generate` + `pnpm db:migrate` (or `pnpm db:push` for quick dev sync). Migrations go to `./drizzle`.
-- Columns get explicit snake_case names (`integer("category_id")`); there is no `casing` option on `db`. Prices are integer cents, and `formatPrice` in `src/lib/catalog.ts` divides by 100.
+- Columns get explicit snake_case names (`integer("category_id")`); there is no `casing` option on `db`. Prices are integer cents, and `formatPrice` in `src/lib/catalog.ts` divides by 100 (whole dollars drop the `.00`; cents always show).
 - Product reads go through `src/lib/products.ts` only. Each query uses `"use cache"` + `cacheLife` + `cacheTag("products")`, so they belong in the static shell rather than in `<Suspense>`. Mutations should call `updateTag("products")`.
 - `src/lib/catalog.ts` is editorial content and pure helpers only; don't put product data back in it. Sample products live in `src/db/seed.ts` (`pnpm db:seed`). The seed upserts on `slug`, so add new seed data the same way.
 - `pnpm build` queries the DB (`/products/[slug]` uses `generateStaticParams` + `ensureStatic = "navigation"`, which needs at least one product), so migrate and seed before building.
@@ -44,7 +44,10 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 - Customer order reads are `getUserOrders` / `getUserOrder` in `src/lib/orders.ts`. Ownership is a `WHERE user_id` in the query, never a check after fetching, and a miss is `notFound()` so ids can't be probed. Customers only see orders completed on Stripe (paid, or with a shipping address); abandoned, canceled and expired checkouts stay hidden.
 - Order writes live in `src/lib/orders.ts`. Status changes only happen `WHERE status = 'pending'`, and releasing stock is in the same statement, so duplicate Stripe events are no-ops. `stripe_events` records event ids that have been handled.
 - `src/app/api/stripe/webhook/route.ts`: `completed`/`async_payment_succeeded` → `paid` (only if `payment_status` is paid and amount and currency match); `expired`/`async_payment_failed` → release stock. `/checkout/return` (Route Handler) syncs the session from Stripe server-side and clears the bag. Use `revalidateTag("products", { expire: 0 })` in Route Handlers, `updateTag` in actions.
-- Sessions expire after 31 minutes, so abandoned checkouts hold stock that long. Clicking back on Stripe hits `/checkout/cancel`, which expires the session and releases stock immediately. It only acts when the httpOnly `pending_checkout` cookie (`src/lib/pending-checkout.ts`) matches the order.
+- Sessions expire after 31 minutes, so abandoned checkouts hold stock that long. Clicking back on Stripe hits `/checkout/cancel`, which expires the session and releases stock immediately. It only acts when the httpOnly `pending_checkout` cookie (`src/lib/pending-checkout.ts`, path `/`) matches the order. `startCheckout` releases that cookie's previous checkout the same way (`cancelCheckout` in `src/lib/order-sweep.ts`), so a browser holds one checkout at a time.
+- Holds the webhook never releases (no session created, missed webhook) are settled by `releaseLapsedHolds` in `src/lib/order-sweep.ts`: lazily after `startCheckout` (at most every 5 minutes per instance) and by `GET /api/cron/release-holds` with `Authorization: Bearer $CRON_SECRET` (schedule it every 5–15 minutes; it also prunes `stripe_events` after 30 days). The Stripe client has a 15s timeout.
+- `startCheckout` is rate-limited per IP (`src/lib/checkout-limit.ts`, `checkout_rate_limits` table). Better Auth's own limiter uses `storage: "database"` (`rate_limit` table); don't share it, because Better Auth deletes rows older than its own short windows.
+- `/checkout/success` shows the address, email and items only to the signed-in owner or the browser holding the `checkout_receipt` cookie set by `/checkout/return`.
 - Local webhooks: `stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired --forward-to localhost:3000/api/stripe/webhook` (newer CLIs require `--events`).
 
 ## Admin
@@ -61,7 +64,7 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 
 ## Environment
 
-Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
+Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`, plus `STRIPE_SECRET_KEY` (restricted `rk_` key from a sandbox), `STRIPE_WEBHOOK_SECRET` and `APP_URL` for checkout, and `CRON_SECRET` for the hold sweep. The Stripe client is created lazily, so builds work without the Stripe keys. `src/db/index.ts` throws when it's imported without `DATABASE_URL`, so anything importing `db` or `auth` fails without it, including at build time.
 
 ## Git
 

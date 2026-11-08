@@ -1,18 +1,21 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { updateTag } from "next/cache";
+import { revalidateTag, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import type Stripe from "stripe";
 import type { CartActionResult } from "@/app/bag/actions";
 import { buildCart, readCart, reconcileCart, writeCart } from "@/lib/cart";
+import { consumeCheckoutAttempt } from "@/lib/checkout-limit";
+import { cancelCheckout, lazyReleaseLapsedHolds } from "@/lib/order-sweep";
 import {
   StockUnavailableError,
   attachCheckoutSession,
   createPendingOrder,
   releaseOrder,
 } from "@/lib/orders";
-import { setPendingCheckout } from "@/lib/pending-checkout";
+import { readPendingCheckout, setPendingCheckout } from "@/lib/pending-checkout";
 import { getCheckoutProducts } from "@/lib/products";
 import { getCurrentUser } from "@/lib/session";
 import { getAppUrl, getStripe } from "@/lib/stripe";
@@ -34,6 +37,27 @@ export async function startCheckout(
   formData: FormData,
 ): Promise<CartActionResult> {
   const expectedTotal = Number(formData.get("expectedTotal"));
+
+  if (!(await consumeCheckoutAttempt())) {
+    return {
+      ok: false,
+      message: "Too many checkout attempts. Please wait a few minutes and try again.",
+    };
+  }
+
+  // Settle lapsed holds from other shoppers once this response is sent.
+  after(async () => {
+    try {
+      if ((await lazyReleaseLapsedHolds()) > 0) revalidateTag("products", { expire: 0 });
+    } catch (error) {
+      console.error("Lazy hold sweep failed", error);
+    }
+  });
+
+  // One pending checkout per browser: going back from Stripe and checking out
+  // again releases the first hold, rather than reserving the pieces twice.
+  const previous = await readPendingCheckout();
+  if (previous && (await cancelCheckout(previous))) updateTag("products");
 
   const stored = await readCart();
   const products = await getCheckoutProducts(stored.map((line) => line.slug));
@@ -83,7 +107,8 @@ export async function startCheckout(
   }
   updateTag("products");
 
-  let url: string | null;
+  let url: string | null = null;
+  let sessionId: string | null = null;
   try {
     const session = await getStripe().checkout.sessions.create(
       {
@@ -121,6 +146,7 @@ export async function startCheckout(
       },
       { idempotencyKey: `checkout:${orderId}` },
     );
+    sessionId = session.id;
     await attachCheckoutSession(orderId, session.id);
     url = session.url;
   } catch (error) {
@@ -129,6 +155,12 @@ export async function startCheckout(
   }
 
   if (!url) {
+    // Don't leave a payable session behind for an order we're about to cancel.
+    if (sessionId) {
+      await getStripe()
+        .checkout.sessions.expire(sessionId)
+        .catch((error) => console.error("Could not expire orphaned session", { sessionId, error }));
+    }
     if (await releaseOrder(orderId, "canceled")) updateTag("products");
     return { ok: false, message: GENERIC_ERROR };
   }

@@ -5,6 +5,8 @@ import { OrderAddress } from "@/components/order-address";
 import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
 import { getOrderBySessionId, orderReference, type Order } from "@/lib/orders";
+import { readCheckoutReceipt } from "@/lib/pending-checkout";
+import { getCurrentUser } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Order confirmation",
@@ -12,7 +14,9 @@ export const metadata: Metadata = {
 };
 
 // Reached through /checkout/return, which has already synced the order with
-// Stripe. This page only reads our order rows; it never changes them.
+// Stripe. This page only reads our order rows; it never changes them. Session
+// ids end up in history and shared links, so the address, email and items are
+// shown only to the browser that placed the order or to its signed-in owner.
 export default function CheckoutSuccessPage({ searchParams }: PageProps<"/checkout/success">) {
   return (
     <div className="container-page pt-8 pb-section md:pt-12">
@@ -47,7 +51,39 @@ async function Confirmation({
     );
   }
 
-  const copy = statusCopy(order);
+  const [user, receipt] = await Promise.all([getCurrentUser(), readCheckoutReceipt()]);
+  const isOwner = receipt === order.id || (order.userId !== null && user?.id === order.userId);
+  const copy = statusCopy(order, isOwner);
+
+  if (!isOwner) {
+    return (
+      <div className="mx-auto max-w-prose">
+        <p className="text-eyebrow text-muted">Order {orderReference(order)}</p>
+        <h1 className="mt-4 text-heading">{copy.title}</h1>
+        <div className="mt-6">
+          <OrderStatus order={order} />
+        </div>
+        <p className="mt-4 text-muted">{copy.body}</p>
+        <p className="mt-4 text-muted">
+          Delivery and item details are shown only in the browser that placed the order
+          {order.userId ? " and in the account that placed it" : ""}.
+        </p>
+        {order.userId && !user ? (
+          <Link
+            href={`/sign-in?next=${encodeURIComponent(`/account/orders/${order.id}`)}`}
+            className="btn btn-primary mt-8"
+          >
+            Sign in to view your order
+          </Link>
+        ) : (
+          <Link href="/collections/new" className="btn btn-primary mt-8">
+            Continue shopping
+          </Link>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
       <header className="lg:col-span-5">
@@ -80,8 +116,8 @@ async function Confirmation({
   );
 }
 
-function statusCopy(order: Order) {
-  const email = order.email ? ` at ${order.email}` : "";
+function statusCopy(order: Order, showEmail: boolean) {
+  const email = showEmail && order.email ? ` at ${order.email}` : "";
   switch (order.status) {
     case "paid":
       return {

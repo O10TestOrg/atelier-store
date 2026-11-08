@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 import { writeCart } from "@/lib/cart";
 import { applyCheckoutSession, findOrderForSession, releaseOrder } from "@/lib/orders";
-import { clearPendingCheckout } from "@/lib/pending-checkout";
+import { clearPendingCheckout, setCheckoutReceipt } from "@/lib/pending-checkout";
 import { getStripe } from "@/lib/stripe";
 
 const SESSION_ID = /^cs_[A-Za-z0-9_]{1,250}$/;
@@ -36,5 +36,8 @@ export async function GET(request: NextRequest) {
   await applyCheckoutSession(session);
   await writeCart([]);
   await clearPendingCheckout();
+  // Lets this browser see the order's address and items on the success page.
+  const order = await findOrderForSession(session);
+  if (order) await setCheckoutReceipt(order.id);
   redirect(`/checkout/success?session_id=${encodeURIComponent(session.id)}`);
 }

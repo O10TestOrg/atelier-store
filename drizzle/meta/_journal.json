@@ -29,6 +29,13 @@
       "when": 1794073107361,
       "tag": "0003_known_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794142994881,
+      "tag": "0004_windy_stranger",
+      "breakpoints": true
     }
   ]
 }

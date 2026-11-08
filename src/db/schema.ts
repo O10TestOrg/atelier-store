@@ -2,6 +2,7 @@
 // after changing auth plugins or fields and merge the diff by hand.
 import { relations, sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   index,
@@ -144,6 +145,16 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+// Auth rate limiting (`rateLimit.storage: "database"`), so limits hold across
+// server instances. Better Auth prunes rows older than its longest window.
+export const rateLimit = pgTable("rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  // Milliseconds since the epoch, as Better Auth stores it.
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
+
 // --- Orders ------------------------------------------------------------------
 // One order per Stripe Checkout Session. Created `pending` at checkout start,
 // in the same batch that reserves its stock; only Stripe (webhook or a
@@ -185,6 +196,7 @@ export const orders = pgTable(
   (table) => [
     index("orders_user_id_idx").on(table.userId),
     index("orders_status_expires_at_idx").on(table.status, table.expiresAt),
+    index("orders_stripe_payment_intent_id_idx").on(table.stripePaymentIntentId),
     check(
       "orders_status_check",
       sql`${table.status} in ('pending', 'paid', 'failed', 'expired', 'canceled')`,
@@ -233,12 +245,27 @@ export const orderItems = pgTable(
 );
 
 // Ledger of Stripe webhook events already handled, so redeliveries are skipped.
-export const stripeEvents = pgTable("stripe_events", {
-  id: text("id").primaryKey(),
-  type: text("type").notNull(),
-  processedAt: timestamp("processed_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+// Pruned after 30 days by the hold sweep (`src/lib/order-sweep.ts`); Stripe
+// stops retrying an event after three.
+export const stripeEvents = pgTable(
+  "stripe_events",
+  {
+    id: text("id").primaryKey(),
+    type: text("type").notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("stripe_events_processed_at_idx").on(table.processedAt)],
+);
+
+// Fixed-window counters for `startCheckout`, keyed by client IP. Separate from
+// Better Auth's `rate_limit`, which deletes rows older than its own (shorter)
+// windows. Written through `src/lib/checkout-limit.ts`.
+export const checkoutRateLimits = pgTable("checkout_rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
 });
 
 // --- Wishlist ----------------------------------------------------------------
