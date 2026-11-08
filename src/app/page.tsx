@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
-import { campaigns, collections, hero, services, story } from "@/lib/catalog";
-import { getNewArrivals } from "@/lib/products";
+import { campaigns, categoryHref, hero, services, story } from "@/lib/catalog";
+import { getCategoryTiles, getNewArrivals } from "@/lib/products";
 
 export default async function Home() {
-  const products = await getNewArrivals(8);
+  const [products, tiles] = await Promise.all([getNewArrivals(8), getCategoryTiles()]);
+  const tileSlugs = new Set(tiles.map((tile) => tile.slug));
+  const liveCampaigns = campaigns.filter((campaign) => tileSlugs.has(campaign.category));
 
   return (
     <>
@@ -33,9 +35,6 @@ export default async function Home() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/collections/new" className="btn btn-primary">
               Discover the collection
-            </Link>
-            <Link href="/women" className="btn btn-secondary">
-              Shop women
             </Link>
           </div>
         </div>
@@ -65,19 +64,19 @@ export default async function Home() {
           </h2>
         </div>
         <ul className="grid grid-cols-2 gap-x-(--grid-gap-x) gap-y-8 lg:grid-cols-4">
-          {collections.map((collection) => (
-            <li key={collection.slug}>
-              <Link href={`/collections/${collection.slug}`} className="group block">
+          {tiles.map((tile) => (
+            <li key={tile.slug}>
+              <Link href={categoryHref(tile.slug)} className="group block">
                 <div className="media-cover aspect-editorial">
                   <Image
-                    src={collection.image}
-                    alt={collection.imageAlt}
+                    src={tile.image}
+                    alt={tile.imageAlt}
                     fill
                     sizes="(min-width: 64rem) 25vw, 50vw"
                     className="transition-transform duration-700 group-hover:scale-[1.03]"
                   />
                 </div>
-                <h3 className="mt-3 text-body-sm">{collection.title}</h3>
+                <h3 className="mt-3 text-body-sm">{tile.name}</h3>
                 <span className="link-quiet text-meta group-hover:decoration-current">
                   Discover
                 </span>
@@ -123,19 +122,16 @@ export default async function Home() {
             <p className="text-eyebrow text-muted">{story.eyebrow}</p>
             <h2 className="mt-4 max-w-[14ch] text-display">{story.title}</h2>
             <p className="mt-6 max-w-md text-muted">{story.description}</p>
-            <Link href="/about/craft" className="btn btn-secondary mt-8">
-              Discover our craft
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* Women / Men campaigns */}
+      {/* Campaigns, one per featured category */}
       <section className="grid gap-(--grid-gap-x) md:grid-cols-2">
-        {campaigns.map((campaign) => (
+        {liveCampaigns.map((campaign) => (
           <Link
-            key={campaign.href}
-            href={campaign.href}
+            key={campaign.category}
+            href={categoryHref(campaign.category)}
             className="theme-inverse group media-cover relative block aspect-4/5 text-foreground md:aspect-editorial"
           >
             <Image

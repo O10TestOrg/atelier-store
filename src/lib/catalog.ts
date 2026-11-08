@@ -3,17 +3,12 @@
 
 import type { Product } from "@/lib/products";
 
-export type Collection = {
-  slug: string;
-  title: string;
-  image: string;
-  imageAlt: string;
-};
-
+// Campaigns link to a category by slug; the home page drops any whose category
+// no longer exists, so a deleted category can't leave a dead link.
 export type Campaign = {
+  category: string;
   eyebrow: string;
   title: string;
-  href: string;
   cta: string;
   image: string;
   imageAlt: string;
@@ -58,33 +53,6 @@ export const hero = {
   imageAlt: "Woman in a long ivory coat and sunglasses under an open sky",
 };
 
-export const collections: Collection[] = [
-  {
-    slug: "leather-goods",
-    title: "Leather Goods",
-    image: unsplash("1584917865442-de89df76afd3"),
-    imageAlt: "Red structured top-handle leather bag on a plinth",
-  },
-  {
-    slug: "ready-to-wear",
-    title: "Ready-to-Wear",
-    image: unsplash("1558769132-cb1aea458c5e"),
-    imageAlt: "Neutral knitwear and shirts hanging on a rail",
-  },
-  {
-    slug: "shoes",
-    title: "Shoes",
-    image: unsplash("1543163521-1bf539c55dd2"),
-    imageAlt: "Pair of floral print stiletto heels against a pale blue wall",
-  },
-  {
-    slug: "jewelry",
-    title: "Jewelry",
-    image: unsplash("1535632066927-ab7c9ab60908"),
-    imageAlt: "Pair of drop earrings with blue stones resting on a green leaf",
-  },
-];
-
 export type StockState = "in-stock" | "low-stock" | "out-of-stock";
 
 const LOW_STOCK_THRESHOLD = 3;
@@ -118,22 +86,26 @@ export const story = {
 
 export const campaigns: Campaign[] = [
   {
-    eyebrow: "Women",
+    category: "ready-to-wear",
+    eyebrow: "Ready-to-Wear",
     title: "The new silhouettes",
-    href: "/women",
-    cta: "Shop women",
+    cta: "Shop ready-to-wear",
     image: unsplash("1509631179647-0177331693ae"),
     imageAlt: "Woman in striped wide-leg trousers posing against a green wall",
   },
   {
-    eyebrow: "Men",
-    title: "Modern tailoring",
-    href: "/men",
-    cta: "Shop men",
+    category: "travel",
+    eyebrow: "Travel",
+    title: "Made for the journey",
+    cta: "Shop travel",
     image: unsplash("1617137968427-85924c800a22"),
     imageAlt: "Man in a navy suit walking outside a glass building",
   },
 ];
+
+// Where the contact page, receipts and account pages send customers. Emails
+// sent by the store use it as their reply-to address.
+export const CLIENT_SERVICES_EMAIL = "clientservices@atelier.example";
 
 export const services = [
   {

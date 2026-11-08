@@ -93,6 +93,15 @@ async function Confirmation({
           <OrderStatus order={order} />
         </div>
         <p className="mt-4 max-w-prose text-muted">{copy.body}</p>
+        {order.userId === null && (
+          <p className="mt-4 max-w-prose text-body-sm text-muted">
+            Keep your reference, {orderReference(order)}: with it and your email you can{" "}
+            <Link href="/orders/lookup" className="link text-foreground">
+              find this order
+            </Link>{" "}
+            again later.
+          </p>
+        )}
         {order.shippingAddress && (
           <div className="mt-8 text-body-sm">
             <h2 className="text-eyebrow text-muted">Delivering to</h2>

@@ -14,6 +14,7 @@ export type CurrentUser = {
   id: string;
   name: string;
   email: string;
+  emailVerified: boolean;
   role: "customer" | "admin";
   createdAt: Date;
 };
@@ -24,11 +25,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
 
-  const { id, name, email, role, createdAt } = session.user;
+  const { id, name, email, emailVerified, role, createdAt } = session.user;
   return {
     id,
     name,
     email,
+    emailVerified,
     role: role === "admin" ? "admin" : "customer",
     createdAt: new Date(createdAt),
   };

@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { FOREIGN_KEY_VIOLATION, UNIQUE_VIOLATION, pgError } from "@/lib/db-errors";
 import {
   isValidId,
@@ -12,6 +13,7 @@ import {
   type ProductField,
 } from "@/lib/product-form";
 import { insertProduct, setStockIfUnchanged, updateProductDetails } from "@/lib/products";
+import { sendRestockAlerts } from "@/lib/restock-alerts";
 import { assertAdmin } from "@/lib/session";
 
 // Server Actions are public endpoints, whatever page renders them: each one
@@ -117,5 +119,7 @@ export async function updateStock(
       message: `Stock changed to ${result.stock} while you were editing. Review and save again.`,
     };
   }
+  // A restock emails anyone waiting for the piece, after the response.
+  if (stock > 0) after(() => sendRestockAlerts());
   return { ok: true, message: "Stock updated." };
 }

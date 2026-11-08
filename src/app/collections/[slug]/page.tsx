@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
+import { SortableProductGrid } from "@/components/sortable-product-grid";
 import { categoryHref, services } from "@/lib/catalog";
 import {
   getCategories,
@@ -91,11 +92,14 @@ export default async function CollectionPage({
         </div>
 
         {products.length > 0 ? (
-          <div className="grid-products">
-            {products.map((product) => (
-              <ProductCard key={product.slug} product={product} />
-            ))}
-          </div>
+          <SortableProductGrid
+            items={products.map((product) => ({
+              key: product.slug,
+              price: product.price,
+              isNew: product.isNew,
+              card: <ProductCard product={product} />,
+            }))}
+          />
         ) : (
           <div className="mx-auto flex max-w-prose flex-col items-center py-section text-center">
             <p className="text-muted">

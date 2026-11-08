@@ -323,6 +323,43 @@ export async function getUserOrder(
   });
 }
 
+// Moves guest orders placed with `email` into the account, so they show in its
+// history. Only call it with an email the account has verified: otherwise
+// anyone could sign up as a customer's address and read their orders.
+export async function claimGuestOrders(userId: string, email: string) {
+  await db
+    .update(orders)
+    .set({ userId })
+    .where(and(isNull(orders.userId), sql`lower(${orders.email}) = lower(${email})`));
+}
+
+// Orders matching a reference (the first 8 characters of the id, see
+// `orderReference`) and email, for the guest order lookup. Only orders the
+// customer could see in an account are found.
+export async function findOrdersByReference(reference: string, email: string) {
+  if (!/^[0-9a-f]{8}$/i.test(reference)) return [];
+  return db
+    .select({ id: orders.id, email: orders.email })
+    .from(orders)
+    .where(
+      and(
+        sql`${orders.id}::text like ${`${reference.toLowerCase()}%`}`,
+        sql`lower(${orders.email}) = lower(${email})`,
+        isVisibleToCustomer,
+      ),
+    )
+    .limit(5);
+}
+
+// One order for a holder of a signed order link (`src/lib/order-link.ts`).
+export async function getLinkedOrder(orderId: string): Promise<Order | undefined> {
+  if (!UUID.test(orderId)) return undefined;
+  return db.query.orders.findFirst({
+    where: and(eq(orders.id, orderId), isVisibleToCustomer),
+    with: { items: true },
+  });
+}
+
 // --- Admin -------------------------------------------------------------------
 // Every order, for staff. Callers must have passed `requireAdmin()` first.
 // Uncached: admins need live statuses, and these must never share a cache entry.

@@ -11,11 +11,11 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: {
-    default: "Atelier | Leather goods and ready-to-wear",
+    default: "Atelier | Bags, travel and ready-to-wear",
     template: "%s | Atelier",
   },
   description:
-    "Leather goods, ready-to-wear, shoes and jewelry, made with care.",
+    "Bags, travel pieces, ready-to-wear and accessories, made with care.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

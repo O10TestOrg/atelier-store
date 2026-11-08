@@ -24,10 +24,10 @@ type FormError = { message: string; focus: boolean };
 
 // Keep in sync with `emailAndPassword` in src/lib/auth.ts (128 is Better
 // Auth's default maximum).
-const MIN_PASSWORD_LENGTH = 10;
-const MAX_PASSWORD_LENGTH = 128;
-const MAX_NAME_LENGTH = 100;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const MIN_PASSWORD_LENGTH = 10;
+export const MAX_PASSWORD_LENGTH = 128;
+export const MAX_NAME_LENGTH = 100;
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const fieldsFor: Record<Mode, FieldName[]> = {
   "sign-in": ["email", "password"],
@@ -107,7 +107,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
       ({ error } =
         mode === "sign-in"
           ? await authClient.signIn.email({ email, password, rememberMe: true })
-          : await authClient.signUp.email({ name: values.name.trim(), email, password }));
+          : await authClient.signUp.email({
+              name: values.name.trim(),
+              email,
+              password,
+              // Where the emailed confirmation link lands (see EmailVerificationNotice).
+              callbackURL: "/account?verified=1",
+            }));
     } catch {
       error = { status: 0 };
     }
@@ -264,7 +270,7 @@ type FieldProps = ComponentProps<"input"> & {
   trailing?: ReactNode;
 };
 
-function Field({ label, error, hint, trailing, className = "", ...inputProps }: FieldProps) {
+export function Field({ label, error, hint, trailing, className = "", ...inputProps }: FieldProps) {
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;

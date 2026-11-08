@@ -9,11 +9,11 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function SignUpPage() {
+export default function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
   return (
     <section className="section container-form">
       <Suspense>
-        <RedirectIfSignedIn />
+        <RedirectIfSignedIn searchParams={searchParams} />
       </Suspense>
 
       <header className="text-center">

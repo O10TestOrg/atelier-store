@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import type Stripe from "stripe";
 import {
   applyCheckoutSession,
@@ -7,6 +8,7 @@ import {
   markEventProcessed,
   releaseOrder,
 } from "@/lib/orders";
+import { sendRestockAlerts } from "@/lib/restock-alerts";
 import { getStripe, getWebhookSecret } from "@/lib/stripe";
 
 // Stripe → order status. The signature is the only thing that makes a request
@@ -55,5 +57,9 @@ async function release(session: Stripe.Checkout.Session, status: "failed" | "exp
     return;
   }
   // Route Handlers can't use updateTag; expire immediately instead.
-  if (await releaseOrder(order.id, status)) revalidateTag("products", { expire: 0 });
+  if (await releaseOrder(order.id, status)) {
+    revalidateTag("products", { expire: 0 });
+    // A released hold can bring a sold-out piece back.
+    after(() => sendRestockAlerts());
+  }
 }

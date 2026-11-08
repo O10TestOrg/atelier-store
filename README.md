@@ -23,7 +23,9 @@ Conventions, architecture and gotchas are in [CLAUDE.md](CLAUDE.md). Read it bef
    | `BETTER_AUTH_URL` | The app's origin, e.g. `http://localhost:3000` |
    | `STRIPE_SECRET_KEY` | A restricted `rk_` key from a Stripe sandbox |
    | `STRIPE_WEBHOOK_SECRET` | Printed by `stripe listen` (below) |
-   | `APP_URL` | The app's origin, used for Stripe return URLs |
+   | `APP_URL` | The app's origin, used for Stripe return URLs and links in emails |
+   | `CRON_SECRET` | Bearer token for the scheduled sweep at `/api/cron/release-holds` |
+   | `RESEND_API_KEY`, `EMAIL_FROM` | Resend key and a sender on a verified domain. Leave unset in development and emails print to the server console |
 
 3. Create the tables and load the sample catalogue:
 
