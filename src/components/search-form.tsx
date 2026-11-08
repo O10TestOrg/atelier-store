@@ -10,6 +10,7 @@ import {
   type Ref,
 } from "react";
 import { CloseIcon, SearchIcon } from "@/components/icons";
+import { consumeSearchFocus } from "@/components/search-link";
 import { MAX_SEARCH_LENGTH, normalizeSearchQuery } from "@/lib/catalog";
 
 const DEBOUNCE_MS = 300;
@@ -32,6 +33,12 @@ export function SearchForm() {
   }
 
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  // Only when the shopper pressed the header's search icon: an explicit ask to
+  // search. Direct visits, reloads and Back leave focus where the page starts.
+  useEffect(() => {
+    if (consumeSearchFocus()) inputRef.current?.focus();
+  }, []);
 
   function search(next: string) {
     clearTimeout(timer.current);
@@ -71,9 +78,6 @@ export function SearchForm() {
       onChange={handleChange}
       onSubmit={handleSubmit}
       onClear={value ? clear : undefined}
-      // Arriving from the header's search icon: ready to type. Not when
-      // returning to results, where it would cover them with the keyboard.
-      autoFocus={!urlQuery}
     />
   );
 }
@@ -90,9 +94,7 @@ function SearchFormFields({
   onChange,
   onSubmit,
   onClear,
-  autoFocus = false,
 }: {
-  autoFocus?: boolean;
   value?: string;
   pending?: boolean;
   inputRef?: Ref<HTMLInputElement>;
@@ -109,7 +111,6 @@ function SearchFormFields({
         <SearchIcon className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 text-muted" />
         <input
           ref={inputRef}
-          autoFocus={autoFocus}
           id="search-query"
           name="q"
           type="search"

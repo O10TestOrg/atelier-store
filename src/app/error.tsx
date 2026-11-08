@@ -6,7 +6,7 @@ import { useEffect } from "react";
 // Catches errors in any page below the root layout (a database or Stripe call
 // failing mid-render), so the header and footer stay and the shopper has a way
 // back. Server error messages are replaced by a digest in production.
-export default function Error({ error, retry }: { error: unknown; retry: () => void }) {
+export default function ErrorPage({ error, retry }: { error: unknown; retry: () => void }) {
   useEffect(() => {
     console.error(error);
   }, [error]);

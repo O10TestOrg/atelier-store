@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AccountLink } from "@/components/account-link";
 import { BagCount } from "@/components/bag-count";
+import { SearchLink } from "@/components/search-link";
 import { WishlistCount, WishlistHeartIcon } from "@/components/wishlist-state";
 import {
   BagIcon,
@@ -76,9 +77,9 @@ export function SiteHeader() {
         </Link>
 
         <div className="-mr-3 flex items-center justify-end">
-          <Link href="/search" className="btn-icon" aria-label="Search">
+          <SearchLink className="btn-icon" aria-label="Search">
             <SearchIcon />
-          </Link>
+          </SearchLink>
           <AccountLink className="btn-icon hidden sm:inline-flex" aria-label="Account">
             <UserIcon />
           </AccountLink>
