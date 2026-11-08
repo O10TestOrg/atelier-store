@@ -16,22 +16,22 @@ function form(price: string) {
 }
 
 describe("parseProductForm price", () => {
-  test("converts dollars as typed to integer cents", () => {
-    for (const [typed, cents] of [
+  test("converts pounds as typed to integer pence", () => {
+    for (const [typed, pence] of [
       ["1250", 125_000],
       ["1250.5", 125_050],
       ["1250.50", 125_050],
-      ["$1,250.05", 125_005],
+      ["£1,250.05", 125_005],
       ["0.99", 99],
     ] as const) {
       const result = parseProductForm(form(typed), "edit");
       assert.ok(result.ok, typed);
-      assert.equal(result.data.price, cents, typed);
+      assert.equal(result.data.price, pence, typed);
     }
   });
 
-  test("rejects prices that aren't dollars and cents", () => {
-    for (const typed of ["12.345", "-5", "abc", "1e3", "1000000.01"]) {
+  test("rejects prices that aren't pounds and pence", () => {
+    for (const typed of ["12.345", "-5", "abc", "1e3", "1000000.01", "$1,250"]) {
       const result = parseProductForm(form(typed), "edit");
       assert.ok(!result.ok, typed);
       assert.ok(result.fieldErrors.price, typed);

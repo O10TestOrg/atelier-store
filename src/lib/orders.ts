@@ -18,6 +18,7 @@ import {
   stripeEvents,
   type OrderStatus,
 } from "@/db/schema";
+import { STORE_CURRENCY } from "@/lib/catalog";
 import { CHECK_VIOLATION, FOREIGN_KEY_VIOLATION, pgError } from "@/lib/db-errors";
 import type { CheckoutProduct } from "@/lib/products";
 
@@ -67,7 +68,9 @@ export async function createPendingOrder(input: {
         id,
         userId: input.userId,
         email: input.email,
+        currency: STORE_CURRENCY,
         subtotal,
+        // Delivery is added once the shopper picks an option on Stripe.
         total: subtotal,
         expiresAt: input.expiresAt,
       }),
@@ -156,6 +159,17 @@ export async function getPendingOrder(orderId: string) {
   return order;
 }
 
+// Any order with its items, whatever its status, for the bag to see what this
+// browser's checkout became. Callers must already know the id is theirs (the
+// httpOnly pending_checkout cookie).
+export async function getCheckoutOrder(orderId: string): Promise<Order | undefined> {
+  if (!UUID.test(orderId)) return undefined;
+  return db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    with: { items: true },
+  });
+}
+
 // The order a Checkout Session belongs to, cross-checked three ways: metadata,
 // client_reference_id and (once attached) the stored session id.
 export async function findOrderForSession(session: Stripe.Checkout.Session) {
@@ -171,10 +185,22 @@ export async function findOrderForSession(session: Stripe.Checkout.Session) {
   return order;
 }
 
+// What the session charged on top of the items: the delivery option the
+// shopper chose. The rates are created inline by `startCheckout`, so the
+// shopper can't set one, but the sums are still checked.
+function chargedShipping(session: Stripe.Checkout.Session) {
+  const shipping = session.shipping_cost?.amount_total ?? 0;
+  const consistent =
+    session.amount_subtotal !== null &&
+    session.amount_total === session.amount_subtotal + shipping;
+  return consistent ? { shipping, total: session.amount_total! } : null;
+}
+
 // Records a completed Checkout Session. Marks the order paid only when Stripe
-// says it's paid and the amount and currency match what we charged. Async
-// payment methods complete as `unpaid` first: the order stays pending, and its
-// stock stays held, until `async_payment_succeeded` or `_failed` arrives.
+// says it's paid, the items cost what we priced them at, and the total is
+// those items plus the chosen delivery, in our currency. Async payment
+// methods complete as `unpaid` first: the order stays pending, and its stock
+// stays held, until `async_payment_succeeded` or `_failed` arrives.
 export async function applyCheckoutSession(
   session: Stripe.Checkout.Session,
 ): Promise<OrderStatus | null> {
@@ -196,27 +222,28 @@ export async function applyCheckoutSession(
         : (session.payment_intent?.id ?? null),
   };
   const isPending = and(eq(orders.id, order.id), eq(orders.status, "pending"));
+  const charged = chargedShipping(session);
+  const matches = and(
+    isPending,
+    eq(orders.subtotal, charged ? session.amount_subtotal! : -1),
+    eq(orders.currency, session.currency ?? ""),
+  );
 
   if (session.payment_status !== "paid") {
     await db.update(orders).set(details).where(isPending);
+    if (charged) await db.update(orders).set(charged).where(matches);
     return order.status;
   }
 
   const [paid] = await db
     .update(orders)
-    .set({ ...details, status: "paid", paidAt: new Date() })
-    .where(
-      and(
-        isPending,
-        eq(orders.total, session.amount_total ?? -1),
-        eq(orders.currency, session.currency ?? ""),
-      ),
-    )
+    .set({ ...details, ...charged, status: "paid", paidAt: new Date() })
+    .where(matches)
     .returning({ id: orders.id });
   if (paid) return "paid";
 
   const [current] = await db
-    .select({ status: orders.status, total: orders.total })
+    .select({ status: orders.status, subtotal: orders.subtotal })
     .from(orders)
     .where(eq(orders.id, order.id));
   if (current?.status !== "paid") {
@@ -226,8 +253,9 @@ export async function applyCheckoutSession(
       orderId: order.id,
       sessionId: session.id,
       status: current?.status,
-      expected: current?.total,
-      received: session.amount_total,
+      expected: current?.subtotal,
+      receivedSubtotal: session.amount_subtotal,
+      receivedTotal: session.amount_total,
     });
   }
   return current?.status ?? null;

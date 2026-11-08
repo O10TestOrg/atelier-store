@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AccountLink } from "@/components/account-link";
 import { BagCount } from "@/components/bag-count";
 import { WishlistCount, WishlistHeartIcon } from "@/components/wishlist-state";
 import {
@@ -45,9 +46,7 @@ export function SiteHeader() {
                 ))}
               </ul>
               <div className="container-page flex flex-col gap-3 pb-8 text-body-sm">
-                <Link href="/account" className="link-quiet self-start">
-                  My account
-                </Link>
+                <AccountLink className="link-quiet self-start">My account</AccountLink>
                 <Link href="/wishlist" className="link-quiet self-start">
                   Wishlist
                 </Link>
@@ -80,13 +79,9 @@ export function SiteHeader() {
           <Link href="/search" className="btn-icon" aria-label="Search">
             <SearchIcon />
           </Link>
-          <Link
-            href="/account"
-            className="btn-icon hidden sm:inline-flex"
-            aria-label="Account"
-          >
+          <AccountLink className="btn-icon hidden sm:inline-flex" aria-label="Account">
             <UserIcon />
-          </Link>
+          </AccountLink>
           <Link href="/wishlist" className="btn-icon relative hidden sm:inline-flex">
             <WishlistHeartIcon />
             <WishlistCount />

@@ -30,9 +30,9 @@ type Props = {
   product?: ProductFormValues;
 };
 
-// Cents to the dollars admins type ("1250" or "1250.50").
-const toDollars = (cents: number) =>
-  cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
+// Pence to the pounds admins type ("1250" or "1250.50").
+const toPounds = (pence: number) =>
+  pence % 100 === 0 ? String(pence / 100) : (pence / 100).toFixed(2);
 
 export function ProductForm({ action, categories, product }: Props) {
   const isEdit = Boolean(product);
@@ -122,12 +122,12 @@ export function ProductForm({ action, categories, product }: Props) {
           ))}
         </SelectField>
         <TextField
-          label="Price (USD)"
+          label="Price (GBP)"
           name="price"
           inputMode="decimal"
-          defaultValue={product ? toDollars(product.price) : undefined}
+          defaultValue={product ? toPounds(product.price) : undefined}
           error={errors.price}
-          hint="In dollars, like 1250 or 1250.50."
+          hint="In pounds, like 1250 or 1250.50. Includes VAT."
           required
         />
         {!isEdit && (

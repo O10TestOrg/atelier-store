@@ -4,9 +4,9 @@ import { randomUUID } from "node:crypto";
 import { revalidateTag, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import type Stripe from "stripe";
 import type { CartActionResult } from "@/app/bag/actions";
-import { buildCart, readCart, reconcileCart, writeCart } from "@/lib/cart";
+import { STORE_CURRENCY } from "@/lib/catalog";
+import { buildCart, readCart, reconcileCart, subtractLines, writeCart } from "@/lib/cart";
 import { consumeCheckoutAttempt } from "@/lib/checkout-limit";
 import { cancelCheckout, lazyReleaseLapsedHolds } from "@/lib/order-sweep";
 import {
@@ -15,28 +15,39 @@ import {
   createPendingOrder,
   releaseOrder,
 } from "@/lib/orders";
-import { readPendingCheckout, setPendingCheckout } from "@/lib/pending-checkout";
+import {
+  clearPendingCheckout,
+  readBrowserCheckout,
+  setCheckoutReceipt,
+  setPendingCheckout,
+} from "@/lib/pending-checkout";
 import { getCheckoutProducts } from "@/lib/products";
 import { getCurrentUser } from "@/lib/session";
+import { readDeliveryCountry, shippingOptions } from "@/lib/shipping";
 import { getAppUrl, getStripe } from "@/lib/stripe";
 
 // Stripe's minimum session lifetime is 30 minutes; a minute's margin covers
 // clock skew. Stock stays reserved for this long if the shopper walks away.
 const RESERVATION_MS = 31 * 60 * 1000;
 
-const SHIPPING_COUNTRIES: Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[] =
-  ["US", "CA", "GB", "IE", "FR", "DE", "IT", "ES", "NL", "BE", "CH", "SE", "DK", "AU", "JP"];
-
 const GENERIC_ERROR = "We couldn’t start checkout. Please try again.";
 
-// Prices, totals and stock all come from the database here. The only form
-// field, `expectedTotal`, is the total the bag page showed: it's never used to
-// price anything, only to stop us charging a total the shopper didn't see.
+// Prices, totals and stock all come from the database here. The form fields,
+// `expectedTotal` and `expectedCountry`, are what the bag page showed: they're
+// never used to price anything, only to stop us charging a total or offering
+// delivery the shopper didn't see.
 export async function startCheckout(
   _previous: CartActionResult,
   formData: FormData,
 ): Promise<CartActionResult> {
   const expectedTotal = Number(formData.get("expectedTotal"));
+  const country = await readDeliveryCountry();
+  if (formData.get("expectedCountry") !== country.code) {
+    return {
+      ok: false,
+      message: "Your delivery country changed. Please review your bag before checking out.",
+    };
+  }
 
   if (!(await consumeCheckoutAttempt())) {
     return {
@@ -56,8 +67,25 @@ export async function startCheckout(
 
   // One pending checkout per browser: going back from Stripe and checking out
   // again releases the first hold, rather than reserving the pieces twice.
-  const previous = await readPendingCheckout();
-  if (previous && (await cancelCheckout(previous))) updateTag("products");
+  const previous = await readBrowserCheckout();
+  if (previous?.state === "holding") {
+    if (await cancelCheckout(previous.order.id)) {
+      updateTag("products");
+    } else {
+      // Stripe couldn't confirm it ended (or it was just paid in another tab).
+      // The bag counts that hold as the shopper's, so don't price against
+      // stock without it; reconciling now would shrink their bag.
+      return {
+        ok: false,
+        message: "Your previous checkout is still open. Please try again in a moment.",
+      };
+    }
+  } else if (previous?.state === "placed") {
+    return {
+      ok: false,
+      message: "Your previous checkout has just been completed. Reload the bag to see your order.",
+    };
+  }
 
   const stored = await readCart();
   const products = await getCheckoutProducts(stored.map((line) => line.slug));
@@ -116,7 +144,7 @@ export async function startCheckout(
         line_items: lines.map(({ product, quantity }) => ({
           quantity,
           price_data: {
-            currency: "usd",
+            currency: STORE_CURRENCY,
             unit_amount: product.price,
             product_data: {
               name: product.name,
@@ -129,16 +157,10 @@ export async function startCheckout(
         metadata: { orderId },
         payment_intent_data: { metadata: { orderId } },
         customer_email: user?.email,
-        shipping_address_collection: { allowed_countries: SHIPPING_COUNTRIES },
-        shipping_options: [
-          {
-            shipping_rate_data: {
-              type: "fixed_amount",
-              display_name: "Complimentary delivery",
-              fixed_amount: { amount: 0, currency: "usd" },
-            },
-          },
-        ],
+        // Hosted Checkout can't reprice delivery for the address typed, so
+        // the address must be in the country the bag priced delivery for.
+        shipping_address_collection: { allowed_countries: [country.code] },
+        shipping_options: shippingOptions(country, STORE_CURRENCY),
         expires_at: Math.floor(expiresAt.getTime() / 1000),
         success_url: `${getAppUrl()}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${getAppUrl()}/checkout/cancel?order=${orderId}`,
@@ -164,7 +186,26 @@ export async function startCheckout(
     if (await releaseOrder(orderId, "canceled")) updateTag("products");
     return { ok: false, message: GENERIC_ERROR };
   }
-  await setPendingCheckout(orderId, expiresAt);
+  await setPendingCheckout(orderId);
   // Outside the try: redirect() works by throwing.
   redirect(url);
+}
+
+// For a shopper who paid on Stripe but never came back through
+// /checkout/return (closed the tab, lost signal): the bag page calls this when
+// it sees the browser's checkout was placed. Takes the bought pieces out of the
+// bag, keeps anything added since, and lets this browser see the receipt.
+export async function settleCheckout() {
+  const checkout = await readBrowserCheckout();
+  if (checkout?.state !== "placed") redirect("/bag");
+
+  const { order } = checkout;
+  const bought = order.items.map((item) => ({ slug: item.slug, quantity: item.quantity }));
+  await writeCart(subtractLines(await readCart(), bought));
+  await clearPendingCheckout();
+  await setCheckoutReceipt(order.id);
+  const session = order.stripeCheckoutSessionId;
+  redirect(
+    session ? `/bag?checkout=placed&session_id=${encodeURIComponent(session)}` : "/bag?checkout=placed",
+  );
 }

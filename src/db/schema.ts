@@ -41,7 +41,7 @@ export const products = pgTable(
     categoryId: integer("category_id")
       .notNull()
       .references(() => categories.id, { onDelete: "restrict" }),
-    // Minor units (cents).
+    // Minor units (pence).
     price: integer("price").notNull(),
     stock: integer("stock").notNull().default(0),
     image: text("image").notNull(),
@@ -178,9 +178,12 @@ export const orders = pgTable(
     // Null for guest checkouts.
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     status: text("status", { enum: orderStatuses }).notNull().default("pending"),
-    currency: text("currency").notNull().default("usd"),
-    // Minor units (cents), computed on the server from live product prices.
+    currency: text("currency").notNull().default("gbp"),
+    // Minor units (pence; cents on early USD orders), computed on the server
+    // from live product prices. `shipping` is the delivery option the shopper
+    // chose on Stripe, so `total` is only final once the session completes.
     subtotal: integer("subtotal").notNull(),
+    shipping: integer("shipping").notNull().default(0),
     total: integer("total").notNull(),
     // The account email, or what the guest entered on Stripe.
     email: text("email"),
@@ -203,7 +206,7 @@ export const orders = pgTable(
     ),
     check(
       "orders_total_check",
-      sql`${table.subtotal} >= 0 and ${table.total} >= 0`,
+      sql`${table.subtotal} >= 0 and ${table.shipping} >= 0 and ${table.total} >= 0`,
     ),
   ],
 );
@@ -233,7 +236,7 @@ export const orderItems = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     reference: text("reference").notNull(),
-    // Minor units (cents).
+    // Minor units, in the order's currency.
     unitPrice: integer("unit_price").notNull(),
     quantity: integer("quantity").notNull(),
   },

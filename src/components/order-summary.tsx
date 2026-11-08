@@ -4,6 +4,7 @@ import type { Order } from "@/lib/orders";
 
 // Items and totals as recorded on the order, not today's catalog prices.
 export function OrderSummary({ order }: { order: Order }) {
+  const price = (amount: number) => formatPrice(amount, order.currency);
   const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
 
   return (
@@ -17,10 +18,10 @@ export function OrderSummary({ order }: { order: Order }) {
               </Link>
               <p className="mt-1 text-meta">
                 Ref. {item.reference} · Qty {item.quantity}
-                {item.quantity > 1 && <> · {formatPrice(item.unitPrice)} each</>}
+                {item.quantity > 1 && <> · {price(item.unitPrice)} each</>}
               </p>
             </div>
-            <p className="tabular-nums">{formatPrice(item.unitPrice * item.quantity)}</p>
+            <p className="tabular-nums">{price(item.unitPrice * item.quantity)}</p>
           </li>
         ))}
       </ul>
@@ -28,13 +29,15 @@ export function OrderSummary({ order }: { order: Order }) {
         <dt className="text-muted">
           Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"})
         </dt>
-        <dd className="text-right tabular-nums">{formatPrice(order.subtotal)}</dd>
+        <dd className="text-right tabular-nums">{price(order.subtotal)}</dd>
         <dt className="text-muted">Delivery</dt>
-        <dd className="text-right">Complimentary</dd>
+        <dd className="text-right tabular-nums">
+          {order.shipping === 0 ? "Complimentary" : price(order.shipping)}
+        </dd>
       </dl>
       <div className="mt-6 flex items-baseline justify-between border-t border-line-strong pt-4">
         <p>Total</p>
-        <p className="text-heading-sm tabular-nums">{formatPrice(order.total)}</p>
+        <p className="text-heading-sm tabular-nums">{price(order.total)}</p>
       </div>
     </>
   );

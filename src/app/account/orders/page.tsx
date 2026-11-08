@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 export default function OrdersPage() {
   return (
@@ -72,7 +72,7 @@ async function OrderList() {
                 <OrderStatus order={order} />
                 <p className="text-body-sm tabular-nums sm:text-right">
                   <span className="sr-only">Total </span>
-                  {formatPrice(order.total)}
+                  {formatPrice(order.total, order.currency)}
                 </p>
               </div>
               <span

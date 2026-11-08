@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { MAX_LINES, MAX_QUANTITY, buildCart, parseCart, reconcileCart } from "@/lib/cart";
+import {
+  MAX_LINES,
+  MAX_QUANTITY,
+  buildCart,
+  creditHeldStock,
+  parseCart,
+  reconcileCart,
+  subtractLines,
+} from "@/lib/cart";
 import type { Product } from "@/lib/products";
 
 const product = (slug: string, stock: number, price = 10_000) =>
@@ -81,5 +89,56 @@ describe("reconcileCart", () => {
         { slug: "b", quantity: 2 },
       ],
     );
+  });
+});
+
+describe("creditHeldStock", () => {
+  test("counts this browser's held pieces as available again", () => {
+    const products = [product("a", 0), product("b", 3), product("c", 1)];
+    const credited = creditHeldStock(products, [
+      { slug: "a", quantity: 1 },
+      { slug: "b", quantity: 2 },
+    ]);
+    assert.deepEqual(
+      credited.map((p) => [p.slug, p.stock]),
+      [["a", 1], ["b", 5], ["c", 1]],
+    );
+    assert.equal(products[0].stock, 0, "doesn't mutate its input");
+  });
+
+  test("keeps a held sold-out piece in the bag at its full quantity", () => {
+    const bag = buildCart(
+      [{ slug: "a", quantity: 2 }],
+      creditHeldStock([product("a", 0)], [{ slug: "a", quantity: 2 }]),
+    );
+    assert.equal(bag.lines[0].status, "ok");
+    assert.equal(bag.lines[0].quantity, 2);
+  });
+});
+
+describe("subtractLines", () => {
+  test("removes what an order bought and keeps pieces added since", () => {
+    assert.deepEqual(
+      subtractLines(
+        [
+          { slug: "a", quantity: 2 },
+          { slug: "b", quantity: 1 },
+          { slug: "c", quantity: 3 },
+        ],
+        [
+          { slug: "a", quantity: 2 },
+          { slug: "c", quantity: 1 },
+          { slug: "z", quantity: 1 },
+        ],
+      ),
+      [
+        { slug: "b", quantity: 1 },
+        { slug: "c", quantity: 2 },
+      ],
+    );
+  });
+
+  test("never leaves a negative or zero line", () => {
+    assert.deepEqual(subtractLines([{ slug: "a", quantity: 1 }], [{ slug: "a", quantity: 3 }]), []);
   });
 });

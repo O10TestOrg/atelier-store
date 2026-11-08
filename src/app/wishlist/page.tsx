@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ANNOUNCER_ID, PAGE_HEADING_ID } from "@/components/focus-after-removal";
 import { ProductCard } from "@/components/product-card";
 import { ClearWishlistButton, WishlistItemControls } from "@/components/wishlist-item-controls";
 import { WishlistSync } from "@/components/wishlist-state";
@@ -32,7 +33,10 @@ export default function WishlistPage() {
       </nav>
 
       <div className="container-page pb-section">
-        <h1 className="pt-2 text-heading lg:pt-6">Wishlist</h1>
+        <h1 id={PAGE_HEADING_ID} tabIndex={-1} className="pt-2 text-heading lg:pt-6">
+          Wishlist
+        </h1>
+        <p id={ANNOUNCER_ID} role="status" className="sr-only" />
         <Suspense fallback={<WishlistSkeleton />}>
           <WishlistContents />
         </Suspense>
@@ -79,6 +83,7 @@ async function WishlistContents() {
         </p>
         <ClearWishlistButton />
       </div>
+      <h2 className="sr-only">Saved pieces</h2>
       <ul className="grid-products">
         {products.map((product) => (
           <WishlistItem key={product.slug} product={product} />

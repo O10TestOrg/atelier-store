@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Order details",
 };
 
-const dateFormat = new Intl.DateTimeFormat("en-US", {
+const dateFormat = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "long",
   timeStyle: "short",
 });

@@ -19,7 +19,7 @@ type ProductSeed = Omit<
   "id" | "categoryId" | "createdAt" | "updatedAt"
 > & { category: string };
 
-// Prices are in cents.
+// Prices are in pence.
 const productData: ProductSeed[] = [
   {
     slug: "lumen-chain-bag",
