@@ -10,7 +10,9 @@ export function getStripe() {
   if (!client) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
-    client = new Stripe(key, { apiVersion: "2026-10-28.endive" });
+    // The default 80s timeout, retried, can outlast a serverless function
+    // after checkout has already reserved stock.
+    client = new Stripe(key, { apiVersion: "2026-10-28.endive", timeout: 15_000 });
   }
   return client;
 }

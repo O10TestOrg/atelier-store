@@ -36,8 +36,9 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
   },
-  // On by default in production only; explicit so dev behaves the same.
-  rateLimit: { enabled: true },
+  // On by default in production only; explicit so dev behaves the same. Stored
+  // in the `rate_limit` table so limits hold across server instances.
+  rateLimit: { enabled: true, storage: "database" },
   hooks: {
     // Merges what a guest saved into the account they sign in or up to, then
     // rewrites the cookie from the account, so pieces saved elsewhere show too.
