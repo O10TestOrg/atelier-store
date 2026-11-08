@@ -17,12 +17,12 @@ Next.js 16 (App Router, `src/`, Turbopack) · React 19 · Tailwind v4 (CSS-confi
 ## Database & auth
 
 - `src/db/schema.ts` is the single source of truth: `db` (`src/db/index.ts`), the Better Auth Drizzle adapter (`src/lib/auth.ts`) and `drizzle-kit` all read it.
-- Better Auth tables (`user`, `session`, `account`, `verification`) don't exist yet. Generate them into the schema with `pnpm dlx auth generate`, then run `pnpm db:generate` + `pnpm db:migrate` (or `pnpm db:push` for quick dev sync). Migrations go to `./drizzle`.
+- The Better Auth tables (`user`, `session`, `account`, `verification`, plus the `role` column) are in the schema and migration `0001`. Re-run `pnpm dlx auth generate` only after changing auth plugins or fields, merge the diff by hand, then run `pnpm db:generate` + `pnpm db:migrate` (or `pnpm db:push` for quick dev sync). Migrations go to `./drizzle`.
 - Columns get explicit snake_case names (`integer("category_id")`); there is no `casing` option on `db`. Prices are integer cents, and `formatPrice` in `src/lib/catalog.ts` divides by 100.
 - Product reads go through `src/lib/products.ts` only. Each query uses `"use cache"` + `cacheLife` + `cacheTag("products")`, so they belong in the static shell rather than in `<Suspense>`. Mutations should call `updateTag("products")`.
 - `src/lib/catalog.ts` is editorial content and pure helpers only; don't put product data back in it. Sample products live in `src/db/seed.ts` (`pnpm db:seed`). The seed upserts on `slug`, so add new seed data the same way.
 - `pnpm build` queries the DB (`/products/[slug]` uses `generateStaticParams` + `ensureStatic = "navigation"`, which needs at least one product), so migrate and seed before building.
-- Server code calls `auth.api.*` directly; client code uses `authClient` from `src/lib/auth-client.ts`. The HTTP handler lives at `src/app/api/auth/[...all]/route.ts`.
+- Server code reads the session through `src/lib/session.ts` (`getCurrentUser`, `requireUser`, `requireAdmin`, `assertAdmin`), never `auth.api` directly; client code uses `authClient` from `src/lib/auth-client.ts`. The HTTP handler lives at `src/app/api/auth/[...all]/route.ts`.
 
 ## Cart
 
@@ -70,6 +70,6 @@ Copy `.env.example` to `.env.local` and set `DATABASE_URL`, `BETTER_AUTH_SECRET`
 
 ## Checks
 
-No test framework or formatter yet. Verify changes with `pnpm lint` and `pnpm build`.
+No formatter yet. Verify changes with `pnpm lint`, `pnpm typecheck` (no DB needed), `pnpm test` and `pnpm build`. Tests use `node:test` through `tsx` and live next to the code as `*.test.ts`; they run with the `react-server` condition so modules importing `server-only` load.
 
 To check signed-in pages, create a throwaway customer with `POST /api/auth/sign-up/email` (send an `Origin` header). When cleaning up, delete their orders before the user: `orders.user_id` is `on delete set null`, so deleting the user first leaves orphaned orders behind.

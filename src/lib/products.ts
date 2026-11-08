@@ -35,14 +35,6 @@ const selectProducts = () =>
     .from(products)
     .innerJoin(categories, eq(products.categoryId, categories.id));
 
-export async function getProducts(): Promise<Product[]> {
-  "use cache";
-  cacheLife("hours");
-  cacheTag("products");
-
-  return selectProducts().orderBy(asc(products.id));
-}
-
 // Products flagged as new, most recently added first; id breaks ties between
 // rows inserted together.
 export async function getNewArrivals(limit = 24): Promise<Product[]> {

@@ -4,14 +4,14 @@
 // Works only in Server Actions and Route Handlers.
 import "server-only";
 import { cookies } from "next/headers";
+import { baseCookieOptions } from "@/lib/cookies";
 
 const COOKIE = "pending_checkout";
 
 export async function setPendingCheckout(orderId: string, expiresAt: Date) {
   (await cookies()).set(COOKIE, orderId, {
+    ...baseCookieOptions,
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
     path: "/checkout",
     expires: expiresAt,
   });

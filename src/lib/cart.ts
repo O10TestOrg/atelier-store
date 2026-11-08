@@ -10,13 +10,12 @@
 // badge can't read the cart on the server and reads that cookie on the client.
 import "server-only";
 import { cookies } from "next/headers";
+import { CART_COUNT_COOKIE, CART_MAX_AGE, baseCookieOptions } from "@/lib/cookies";
 import type { Product } from "@/lib/products";
 
 export type CartLine = { slug: string; quantity: number };
 
 const CART_COOKIE = "cart";
-// Keep in sync with `bag-count.tsx`.
-const COUNT_COOKIE = "cart_count";
 // Keeps the cookie well under the 4 KB limit.
 export const MAX_LINES = 30;
 // Per-line ceiling on top of stock, so one order can't take a whole shelf.
@@ -63,20 +62,15 @@ export async function writeCart(lines: CartLine[]) {
   const store = await cookies();
   if (lines.length === 0) {
     store.delete(CART_COOKIE);
-    store.delete(COUNT_COOKIE);
+    store.delete(CART_COUNT_COOKIE);
     return;
   }
 
   const kept = lines.slice(0, MAX_LINES);
-  const options = {
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  } as const;
+  const options = { ...baseCookieOptions, maxAge: CART_MAX_AGE };
   store.set(CART_COOKIE, JSON.stringify(kept), { ...options, httpOnly: true });
   const count = kept.reduce((total, line) => total + line.quantity, 0);
-  store.set(COUNT_COOKIE, String(count), options);
+  store.set(CART_COUNT_COOKIE, String(count), options);
 }
 
 export type BagLine = {

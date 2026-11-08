@@ -4,8 +4,8 @@ import { createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { WISHLIST_COOKIE } from "@/lib/cookies";
 import {
-  WISHLIST_COOKIE,
   addUserWishlist,
   getUserWishlistSlugs,
   parseWishlist,
