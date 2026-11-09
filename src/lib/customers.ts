@@ -38,8 +38,8 @@ export async function getAdminCustomers(query: { q?: string; role?: Role; page: 
         emailVerified: user.emailVerified,
         role: user.role,
         createdAt: user.createdAt,
-        // Orders customers can see: paid ones (abandoned checkouts aren't
-        // orders to them).
+        // Paid orders only: abandoned checkouts aren't orders to customers, and
+        // async payments still clearing aren't counted until they're paid.
         orderCount: sql<number>`count(${orders.id}) filter (where ${orders.status} = 'paid')`.mapWith(
           Number,
         ),

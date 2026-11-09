@@ -81,7 +81,7 @@ export type BagLine = {
 
 export type Bag = {
   lines: BagLine[];
-  // Cents. Unavailable lines are left out.
+  // Pence. Unavailable lines are left out.
   subtotal: number;
   itemCount: number;
   // Lines whose product no longer exists.

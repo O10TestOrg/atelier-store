@@ -23,9 +23,11 @@ Conventions, architecture and gotchas are in [CLAUDE.md](CLAUDE.md). Read it bef
    | `BETTER_AUTH_URL` | The app's origin, e.g. `http://localhost:3000` |
    | `STRIPE_SECRET_KEY` | A restricted `rk_` key from a Stripe sandbox |
    | `STRIPE_WEBHOOK_SECRET` | Printed by `stripe listen` (below) |
-   | `APP_URL` | The app's origin, used for Stripe return URLs and links in emails |
+   | `APP_URL` | The app's public origin, used for Stripe return URLs and links in emails. Vercel previews use their own URL instead |
    | `CRON_SECRET` | Bearer token for the scheduled sweep at `/api/cron/release-holds` |
    | `RESEND_API_KEY`, `EMAIL_FROM` | Resend key and a sender on a verified domain. Leave unset in development and emails print to the server console |
+   | `CLIENT_SERVICES_EMAIL` | Optional. The contact and reply-to address. Read at build time |
+   | `BLOB_READ_WRITE_TOKEN` | Optional. A Vercel Blob token for product photo uploads in `/admin`. Read at build time too |
 
 3. Create the tables and load the sample catalogue:
 
@@ -63,6 +65,10 @@ The admin area is at `/admin`. After the first admin, roles can also be changed 
 
 To upload product photos instead of pasting Unsplash URLs, create a Vercel Blob store and set `BLOB_READ_WRITE_TOKEN` before building.
 
+## Scheduled sweep
+
+Call `GET /api/cron/release-holds` every 5–15 minutes with `Authorization: Bearer $CRON_SECRET`. It releases stock held by checkouts that Stripe never reported back on, sends due back-in-stock emails and prunes old rows. Vercel Cron sends that header itself.
+
 ## Scripts
 
 | Script | Does |
@@ -70,7 +76,7 @@ To upload product photos instead of pasting Unsplash URLs, create a Vercel Blob 
 | `pnpm dev` / `pnpm build` / `pnpm start` | Run, build or serve the app |
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | TypeScript, no database needed |
-| `pnpm test` | Unit tests for the cart, price and redirect helpers |
+| `pnpm test` | Unit tests (`node:test`) for the pure helpers, in `src/lib/*.test.ts` |
 | `pnpm db:generate` / `pnpm db:migrate` | Create and apply migrations from `src/db/schema.ts` |
 | `pnpm db:push` | Sync the schema straight to the database (quick dev only) |
 | `pnpm db:studio` | Browse the database |
