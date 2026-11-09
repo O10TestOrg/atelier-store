@@ -5,6 +5,7 @@ import { updateStock } from "@/app/admin/products/actions";
 import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
 import { ProductStatus } from "@/components/admin/product-status";
 import { StockForm } from "@/components/admin/stock-form";
+import { ProductThumb } from "@/components/product-thumb";
 import { productStatuses, type ProductStatus as Status } from "@/db/schema";
 import { formatPrice } from "@/lib/catalog";
 import { parseInteger } from "@/lib/product-form";
@@ -167,14 +168,19 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
             <tbody>
               {products.map((product) => (
                 <tr key={product.id} className="border-b align-top">
-                  <th scope="row" className="py-4 pr-4 font-normal">
-                    <Link href={`/admin/products/${product.id}/edit`} className="link-quiet">
-                      {product.name}
-                    </Link>
-                    <p className="mt-1 text-meta">
-                      Ref. {product.reference}
-                      {product.isNew && " · New"}
-                    </p>
+                  <th scope="row" className="py-3 pr-4 font-normal">
+                    <div className="flex items-start gap-3">
+                      <ProductThumb image={product.image} />
+                      <div className="min-w-0 pt-1">
+                        <Link href={`/admin/products/${product.id}/edit`} className="link-quiet">
+                          {product.name}
+                        </Link>
+                        <p className="mt-1 text-meta">
+                          Ref. {product.reference}
+                          {product.isNew && " · New"}
+                        </p>
+                      </div>
+                    </div>
                   </th>
                   <td className="py-4 pr-4 whitespace-nowrap">
                     <ProductStatus status={product.status} />

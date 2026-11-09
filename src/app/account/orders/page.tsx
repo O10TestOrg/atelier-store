@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { OrderStatus } from "@/components/order-status";
+import { OrderItemThumbs } from "@/components/product-thumb";
 import { formatPrice } from "@/lib/catalog";
 import { getUserOrders, orderReference } from "@/lib/orders";
 import { requireUser } from "@/lib/session";
@@ -61,14 +62,17 @@ async function OrderList() {
               href={`/account/orders/${order.id}`}
               className="group flex flex-col gap-3 py-5 sm:grid sm:grid-cols-[minmax(0,1fr)_12rem_7rem_1rem] sm:items-center sm:gap-6"
             >
-              <div className="min-w-0">
-                <h2 className="text-body-sm">Order {orderReference(order)}</h2>
-                <p className="mt-1 text-meta">
-                  <time dateTime={order.createdAt.toISOString()}>
-                    {dateFormat.format(order.createdAt)}
-                  </time>{" "}
-                  · {itemCount} {itemCount === 1 ? "item" : "items"}
-                </p>
+              <div className="flex min-w-0 items-center gap-4">
+                <OrderItemThumbs items={order.items} />
+                <div className="min-w-0">
+                  <h2 className="text-body-sm">Order {orderReference(order)}</h2>
+                  <p className="mt-1 text-meta">
+                    <time dateTime={order.createdAt.toISOString()}>
+                      {dateFormat.format(order.createdAt)}
+                    </time>{" "}
+                    · {itemCount} {itemCount === 1 ? "item" : "items"}
+                  </p>
+                </div>
               </div>
               <div className="flex items-baseline justify-between gap-6 sm:contents">
                 <OrderStatus order={order} />

@@ -38,9 +38,15 @@ import { CHECK_VIOLATION, FOREIGN_KEY_VIOLATION, pgError } from "@/lib/db-errors
 import { writeWithEvent, type AdminEventInput } from "@/lib/admin-events";
 import { likePattern, type CheckoutProduct } from "@/lib/products";
 
-export type Order = typeof orders.$inferSelect & {
-  items: (typeof orderItems.$inferSelect)[];
+export type OrderItem = typeof orderItems.$inferSelect & {
+  // The product's current photo; null if the product has since been deleted.
+  product: { image: string } | null;
 };
+
+export type Order = typeof orders.$inferSelect & { items: OrderItem[] };
+
+// Order reads load each item with its product's photo for the thumbnails.
+const items = { with: { product: { columns: { image: true } } } } as const;
 
 // Short, human-friendly reference for receipts and the account page.
 export const orderReference = (order: Pick<Order, "id">) =>
@@ -182,7 +188,7 @@ export async function getCheckoutOrder(orderId: string): Promise<Order | undefin
   if (!UUID.test(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: eq(orders.id, orderId),
-    with: { items: true },
+    with: { items },
   });
 }
 
@@ -319,7 +325,7 @@ export async function pruneStripeEvents(days = 30) {
 export async function getOrderBySessionId(sessionId: string): Promise<Order | undefined> {
   return db.query.orders.findFirst({
     where: eq(orders.stripeCheckoutSessionId, sessionId),
-    with: { items: true },
+    with: { items },
   });
 }
 
@@ -335,7 +341,7 @@ const isVisibleToCustomer = or(
 export async function getUserOrders(userId: string): Promise<Order[]> {
   return db.query.orders.findMany({
     where: and(eq(orders.userId, userId), isVisibleToCustomer),
-    with: { items: true },
+    with: { items },
     orderBy: desc(orders.createdAt),
   });
 }
@@ -350,7 +356,7 @@ export async function getUserOrder(
   if (!UUID.test(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: and(eq(orders.id, orderId), eq(orders.userId, userId), isVisibleToCustomer),
-    with: { items: true },
+    with: { items },
   });
 }
 
@@ -387,7 +393,7 @@ export async function getLinkedOrder(orderId: string): Promise<Order | undefined
   if (!UUID.test(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: and(eq(orders.id, orderId), isVisibleToCustomer),
-    with: { items: true },
+    with: { items },
   });
 }
 
@@ -446,7 +452,7 @@ export async function getAdminOrders(filter: AdminOrderFilter, page: number, que
   const [list, [{ total }]] = await Promise.all([
     db.query.orders.findMany({
       where,
-      with: { items: true, user: { columns: { name: true, email: true } } },
+      with: { items, user: { columns: { name: true, email: true } } },
       orderBy: desc(orders.createdAt),
       limit: ADMIN_ORDERS_PER_PAGE,
       offset: (page - 1) * ADMIN_ORDERS_PER_PAGE,
@@ -493,6 +499,6 @@ export async function getAdminOrder(orderId: string): Promise<AdminOrder | undef
   if (!UUID.test(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: eq(orders.id, orderId),
-    with: { items: true, user: { columns: { name: true, email: true } } },
+    with: { items, user: { columns: { name: true, email: true } } },
   });
 }
