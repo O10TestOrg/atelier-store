@@ -65,8 +65,8 @@ async function WishlistContents() {
         <p className="mt-2 max-w-prose text-muted">
           Tap the heart on any piece to save it here.
         </p>
-        <Link href="/collections/new" className="btn btn-primary mt-8">
-          Shop new arrivals
+        <Link href="/search" className="btn btn-primary mt-8">
+          Shop all
         </Link>
         {nudge}
       </div>

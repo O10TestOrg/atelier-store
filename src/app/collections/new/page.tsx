@@ -7,7 +7,7 @@ import { getNewArrivals } from "@/lib/products";
 export const metadata: Metadata = {
   title: "New arrivals",
   description:
-    "The latest leather goods, ready-to-wear and accessories from the new season.",
+    "The latest leather goods, clothing and accessories from the new season.",
 };
 
 export default async function NewArrivalsPage() {
@@ -59,8 +59,8 @@ export default async function NewArrivalsPage() {
             <p className="text-muted">
               New pieces are on their way. Check back soon.
             </p>
-            <Link href="/" className="btn btn-primary mt-8">
-              Return to the homepage
+            <Link href="/search" className="btn btn-primary mt-8">
+              Shop all
             </Link>
           </div>
         )}

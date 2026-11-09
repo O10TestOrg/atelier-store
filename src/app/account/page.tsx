@@ -44,8 +44,8 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
         />
         <Tile
           href="/search"
-          title="Search the collection"
-          description="Find a piece by name, colour or material."
+          title="Shop all"
+          description="Browse or search every piece."
         />
         <Tile
           href="/help/contact"

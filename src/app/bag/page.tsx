@@ -86,8 +86,8 @@ async function BagContents() {
         <p className="mt-2 max-w-prose text-muted">
           Pieces you add will be kept here for 30 days on this device.
         </p>
-        <Link href="/collections/new" className="btn btn-primary mt-8">
-          Shop new arrivals
+        <Link href="/search" className="btn btn-primary mt-8">
+          Shop all
         </Link>
       </div>
     );

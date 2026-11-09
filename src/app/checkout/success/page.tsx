@@ -76,7 +76,7 @@ async function Confirmation({
             Sign in to view your order
           </Link>
         ) : (
-          <Link href="/collections/new" className="btn btn-primary mt-8">
+          <Link href="/search" className="btn btn-primary mt-8">
             Continue shopping
           </Link>
         )}
@@ -108,7 +108,7 @@ async function Confirmation({
             <OrderAddress order={order} className="mt-3" />
           </div>
         )}
-        <Link href="/collections/new" className="btn btn-primary mt-8">
+        <Link href="/search" className="btn btn-primary mt-8">
           Continue shopping
         </Link>
       </header>
