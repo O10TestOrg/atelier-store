@@ -207,6 +207,12 @@
     text-wrap: pretty;
   }
 
+  /* Key facts in a sentence (a price, a deadline) stand out from muted copy. */
+  strong {
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
   a {
     color: inherit;
     text-decoration: none;

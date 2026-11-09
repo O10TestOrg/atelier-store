@@ -31,8 +31,7 @@ export default function ContactPage() {
           <p className="text-eyebrow text-muted">Client services</p>
           <h1 className="mt-4 text-display">Contact us</h1>
           <p className="mt-4 text-muted">
-            Questions about an order, a piece or your account? Email our client services team
-            and a member of the team will reply.
+            Questions about an order, a piece or your account? Email us and we’ll reply.
           </p>
           <a href={`mailto:${CLIENT_SERVICES_EMAIL}`} className="btn btn-primary mt-8">
             Email {CLIENT_SERVICES_EMAIL}
@@ -45,8 +44,8 @@ export default function ContactPage() {
               About an order
             </h2>
             <p className="mt-2 text-body-sm text-muted">
-              Include your order reference: the eight characters shown on your confirmation
-              page and in your account. Checked out as a guest?{" "}
+              Include your <strong>order reference</strong> (8 characters, on your confirmation
+              and in your account). Checked out as a guest?{" "}
               <Link href="/orders/lookup" className="link text-foreground">
                 Find your order
               </Link>{" "}
@@ -58,8 +57,8 @@ export default function ContactPage() {
               About a piece
             </h2>
             <p className="mt-2 text-body-sm text-muted">
-              Include the piece’s name or its reference (Ref. on the product page). For a
-              sold-out piece, you can also ask to be emailed when it’s back.
+              Include the piece’s <strong>name or Ref.</strong> from its page. Sold out? You
+              can ask to be emailed when it’s back.
             </p>
           </section>
           <section className="border-b py-6" aria-labelledby="account-title">
@@ -71,7 +70,7 @@ export default function ContactPage() {
               <Link href="/account/details" className="link text-foreground">
                 Account details
               </Link>
-              . Write from the email address on your account if you need anything else.
+              . For anything else, write from <strong>your account’s email</strong>.
             </p>
           </section>
         </div>

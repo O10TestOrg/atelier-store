@@ -213,9 +213,8 @@ export function ProductForm({ action, categories, product, uploadHost }: Props) 
           <input type="hidden" name="confirmPrice" value={confirmPrice.to} />
           <p>
             The price changes from {formatPrice(confirmPrice.from)} to{" "}
-            <strong className="font-medium">{formatPrice(confirmPrice.to)}</strong>. Shoppers see
-            the new price as soon as you save. If that’s right, confirm below; otherwise correct
-            the price.
+            <strong>{formatPrice(confirmPrice.to)}</strong>. Shoppers see it as soon as you
+            save. Confirm below, or correct the price.
           </p>
         </Notice>
       )}

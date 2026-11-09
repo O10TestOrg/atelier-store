@@ -21,6 +21,13 @@ import {
   getRelatedProducts,
   type Product,
 } from "@/lib/products";
+import { formatDays, RATES, type Zone } from "@/lib/shipping";
+
+const deliveryZones: { zone: Zone; label: string }[] = [
+  { zone: "uk", label: "UK" },
+  { zone: "europe", label: "Europe" },
+  { zone: "world", label: "Rest of the world" },
+];
 
 // Render unlisted slugs fully before responding, so notFound() sends a real
 // 404 instead of a 200 from the streamed fallback shell.
@@ -139,20 +146,29 @@ export default async function ProductPage({
               </ul>
             </Disclosure>
             <Disclosure title="Delivery & returns">
-              <p>
-                Complimentary UK delivery in 2–3 working days, or next working
-                day for £10, signed for on arrival. Express delivery to Europe
-                (3–5 working days) is £20, and to the rest of the world (4–7
-                working days) £30; import duties may be charged on delivery
-                outside the UK. Unworn pieces can be returned or exchanged within
-                30 days, online or in store.
+              <ul className="flex flex-col gap-2">
+                {deliveryZones.map(({ zone, label }) => (
+                  <li key={zone}>
+                    <strong>{label}:</strong>{" "}
+                    {RATES[zone]
+                      .map(
+                        (rate) =>
+                          `${rate.amount === 0 ? "Free" : formatPrice(rate.amount)} (${formatDays(rate)})`,
+                      )
+                      .join(" or ")}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4">Import duties may apply outside the UK.</p>
+              <p className="mt-2">
+                <strong>Returns:</strong> unworn pieces within 30 days, online or in
+                store.
               </p>
             </Disclosure>
             <Disclosure title="Care">
               <p>
-                Store in the dust bag provided, away from direct sunlight and
-                humidity. Our ateliers offer care and repair services for the
-                lifetime of the piece.
+                Keep it in its dust bag, away from sunlight and damp. We offer{" "}
+                <strong>care and repairs for life</strong>.
               </p>
             </Disclosure>
           </div>
