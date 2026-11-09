@@ -7,8 +7,8 @@ import "server-only";
 import { and, isNotNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { restockAlerts } from "@/db/schema";
-import { canSendEmail, composeEmail, trySendEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/app-url";
+import { canSendEmail, composeEmail, trySendEmail } from "@/lib/email";
 
 export async function addRestockAlert(productId: number, email: string) {
   await db

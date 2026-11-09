@@ -10,7 +10,7 @@
 // badge can't read the cart on the server and reads that cookie on the client.
 import "server-only";
 import { cookies } from "next/headers";
-import { CART_COUNT_COOKIE, CART_MAX_AGE, baseCookieOptions } from "@/lib/cookies";
+import { CART_COUNT_COOKIE, CART_MAX_AGE, baseCookieOptions, isValidSlug } from "@/lib/cookies";
 import type { Product } from "@/lib/products";
 
 export type CartLine = { slug: string; quantity: number };
@@ -20,10 +20,7 @@ const CART_COOKIE = "cart";
 export const MAX_LINES = 30;
 // Per-line ceiling on top of stock, so one order can't take a whole shelf.
 export const MAX_QUANTITY = 10;
-const MAX_SLUG_LENGTH = 200;
 
-export const isValidSlug = (value: unknown): value is string =>
-  typeof value === "string" && value.length > 0 && value.length <= MAX_SLUG_LENGTH;
 
 // Most of one product a single line may hold right now.
 export const maxQuantity = (product: Product) =>
@@ -126,6 +123,10 @@ export function creditHeldStock(products: Product[], held: CartLine[]): Product[
     return quantity ? { ...product, stock: product.stock + quantity } : product;
   });
 }
+
+// An order's items as bag lines, to hold or take out of the bag.
+export const orderLines = (order: { items: CartLine[] }): CartLine[] =>
+  order.items.map(({ slug, quantity }) => ({ slug, quantity }));
 
 // Takes what an order bought out of the bag, keeping anything added since.
 export function subtractLines(lines: CartLine[], bought: CartLine[]): CartLine[] {

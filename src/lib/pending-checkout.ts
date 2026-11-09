@@ -9,7 +9,7 @@
 // Setters work only in Server Actions and Route Handlers.
 import "server-only";
 import { cookies } from "next/headers";
-import type { CartLine } from "@/lib/cart";
+import { orderLines, type CartLine } from "@/lib/cart";
 import { baseCookieOptions } from "@/lib/cookies";
 import { getCheckoutOrder, type Order } from "@/lib/orders";
 
@@ -53,7 +53,7 @@ export async function readBrowserCheckout(): Promise<BrowserCheckout> {
   if (order.status !== "pending") return null;
   // A shipping address means the shopper finished on Stripe.
   if (order.shippingAddress) return { state: "placed", order };
-  const held = order.items.map((item) => ({ slug: item.slug, quantity: item.quantity }));
+  const held = orderLines(order);
   return { state: "holding", order, held };
 }
 

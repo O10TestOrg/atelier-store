@@ -1,6 +1,7 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { AuthorizationError, assertAdmin } from "@/lib/session";
-import { UPLOAD_CONTENT_TYPES, UPLOAD_MAX_BYTES, getUploadHost } from "@/lib/uploads";
+import { UPLOAD_CONTENT_TYPES, UPLOAD_MAX_BYTES } from "@/lib/product-form";
+import { getUploadHost } from "@/lib/uploads";
 
 // Issues client upload tokens for product photos (`ImageField`). The browser
 // then uploads to Blob directly, so large files never pass through here.

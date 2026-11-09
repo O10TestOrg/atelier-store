@@ -2,14 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { updateStock } from "@/app/admin/products/actions";
-import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
+import {
+  AdminPager,
+  AdminSearch,
+  listHref,
+  pageCount,
+  pageParam,
+  param,
+} from "@/components/admin/list-controls";
 import { ProductStatus } from "@/components/admin/product-status";
 import { StockForm } from "@/components/admin/stock-form";
 import { ProductThumb } from "@/components/product-thumb";
 import { SignalMessage, StatusDot } from "@/components/signal";
 import { productStatuses, type ProductStatus as Status } from "@/db/schema";
 import { LOW_STOCK, formatPrice } from "@/lib/catalog";
-import { parseInteger } from "@/lib/product-form";
 import {
   ADMIN_PRODUCTS_PER_PAGE,
   getAdminCategories,
@@ -57,7 +63,7 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
   const status = productStatuses.find((s) => s === param(params.status));
   const lowStock = param(params.stock) === "low";
   const q = param(params.q).slice(0, 200);
-  const page = Math.max(1, parseInteger(param(params.page)) ?? 1);
+  const page = pageParam(params.page);
   const deleted = param(params.deleted) === "1";
 
   const { products, total } = await getAdminProducts({
@@ -67,7 +73,7 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
     q,
     page,
   });
-  const pages = Math.max(1, Math.ceil(total / ADMIN_PRODUCTS_PER_PAGE));
+  const pages = pageCount(total, ADMIN_PRODUCTS_PER_PAGE);
   const filters = {
     category: active?.slug,
     status,

@@ -7,7 +7,6 @@
 // orders, so the sweep, the webhook, cancel and return can all race safely.
 // Callers revalidate the "products" tag when these return a positive count.
 import "server-only";
-import { pruneCheckoutAttempts } from "@/lib/checkout-limit";
 import {
   applyCheckoutSession,
   getLapsedPendingOrders,
@@ -15,6 +14,7 @@ import {
   pruneStripeEvents,
   releaseOrder,
 } from "@/lib/orders";
+import { pruneRateLimits } from "@/lib/rate-limit";
 import { pruneRestockAlerts, sendRestockAlerts } from "@/lib/restock-alerts";
 import { getStripe } from "@/lib/stripe";
 
@@ -92,6 +92,6 @@ export async function lazyReleaseLapsedHolds() {
 export async function scheduledSweep() {
   const released = await releaseLapsedHolds(100);
   await sendRestockAlerts();
-  await Promise.all([pruneStripeEvents(), pruneCheckoutAttempts(), pruneRestockAlerts()]);
+  await Promise.all([pruneStripeEvents(), pruneRateLimits(), pruneRestockAlerts()]);
   return released;
 }

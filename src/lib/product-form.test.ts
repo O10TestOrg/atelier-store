@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { isAllowedImageUrl, parseCategorySlug, parseProductForm } from "@/lib/product-form";
+import {
+  isAllowedImageUrl,
+  isValidId,
+  parseCategoryName,
+  parseCategorySlug,
+  parseInteger,
+  parseProductForm,
+  parseStock,
+  toPounds,
+} from "@/lib/product-form";
 
 const UPLOAD_HOST = "abc123.public.blob.vercel-storage.com";
 const noUploads = { uploadHost: null };
@@ -111,5 +120,47 @@ describe("parseCategorySlug", () => {
     assert.ok(parseCategorySlug("new").error);
     assert.equal(parseCategorySlug(" newsletters ").slug, "newsletters");
     assert.equal(parseCategorySlug("bags").slug, "bags");
+  });
+});
+
+describe("number parsing", () => {
+  test("parseInteger takes whole non-negative numbers only", () => {
+    assert.equal(parseInteger(" 42 "), 42);
+    assert.equal(parseInteger("0"), 0);
+    for (const value of ["", "-1", "1.5", "1e3", "abc", 42, undefined]) {
+      assert.equal(parseInteger(value), null, String(value));
+    }
+    assert.equal(parseInteger("11", 10), null);
+    assert.equal(parseInteger("99999999999999999999"), null);
+  });
+
+  test("parseStock caps at the stock limit", () => {
+    assert.equal(parseStock("5"), 5);
+    assert.equal(parseStock("100000000"), null);
+  });
+
+  test("isValidId wants a positive safe integer", () => {
+    assert.equal(isValidId(1), true);
+    for (const value of [0, -1, 1.5, "1", Number.MAX_SAFE_INTEGER + 1, null]) {
+      assert.equal(isValidId(value), false, String(value));
+    }
+  });
+
+  test("toPounds drops .00 and keeps pence", () => {
+    assert.equal(toPounds(125000), "1250");
+    assert.equal(toPounds(125050), "1250.50");
+    assert.equal(toPounds(5), "0.05");
+  });
+});
+
+describe("parseCategoryName", () => {
+  test("trims and collapses spaces", () => {
+    assert.deepEqual(parseCategoryName("  Knit   wear "), { name: "Knit wear" });
+  });
+
+  test("refuses empty and over-long names", () => {
+    assert.ok(parseCategoryName("   ").error);
+    assert.ok(parseCategoryName(7).error);
+    assert.ok(parseCategoryName("a".repeat(200)).error);
   });
 });

@@ -1,13 +1,12 @@
 "use server";
 
-import { consumeRateLimit, RESTOCK_ALERT_LIMIT } from "@/lib/checkout-limit";
-import { isValidSlug } from "@/lib/cart";
+import { isValidEmail, normalizeEmail } from "@/lib/account-fields";
+import { isValidSlug } from "@/lib/cookies";
 import { getProductAvailability } from "@/lib/products";
+import { consumeRateLimit, RESTOCK_ALERT_LIMIT } from "@/lib/rate-limit";
 import { addRestockAlert } from "@/lib/restock-alerts";
 
 export type RestockAlertResult = { ok: boolean; message: string } | null;
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // "Email me when it's back" on a sold-out product. No session needed, so the
 // slug and email are untrusted, and it's rate-limited per IP. Stock is read
@@ -17,9 +16,8 @@ export async function requestRestockAlert(
   _previous: RestockAlertResult,
   formData: FormData,
 ): Promise<RestockAlertResult> {
-  const raw = formData.get("email");
-  const email = typeof raw === "string" ? raw.trim().slice(0, 254) : "";
-  if (!EMAIL_PATTERN.test(email)) {
+  const email = normalizeEmail(formData.get("email"));
+  if (!isValidEmail(email)) {
     return { ok: false, message: "Enter a valid email address, like name@example.com." };
   }
   if (!isValidSlug(slug)) return { ok: false, message: "This piece is no longer available." };

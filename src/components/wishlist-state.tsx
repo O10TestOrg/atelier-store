@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { CountBadge } from "@/components/count-badge";
 import { HeartIcon } from "@/components/icons";
 import { useCookie, writeCookie } from "@/components/use-cookie";
-import { WISHLIST_COOKIE, WISHLIST_MAX_AGE } from "@/lib/cookies";
+import { WISHLIST_COOKIE, WISHLIST_MAX_AGE, parseWishlist } from "@/lib/cookies";
 
 // The cookie is written by the wishlist actions and the sign-in hook
 // (src/lib/wishlist.ts). It's display-only: the server never trusts it.
@@ -19,11 +20,10 @@ export function clearWishlistCookie() {
   notifyWishlistChange();
 }
 
+// The same parse as the server's, after undoing the cookie's URL encoding.
 function parse(raw: string): string[] {
-  if (!raw) return [];
   try {
-    const data: unknown = JSON.parse(decodeURIComponent(raw));
-    return Array.isArray(data) ? data.filter((slug) => typeof slug === "string") : [];
+    return parseWishlist(decodeURIComponent(raw));
   } catch {
     return [];
   }
@@ -50,21 +50,7 @@ export function WishlistHeartIcon() {
 export function WishlistCount() {
   const count = parse(useWishlistCookie()).length;
 
-  return (
-    <>
-      <span className="sr-only">
-        Wishlist{count > 0 && `, ${count} ${count === 1 ? "item" : "items"}`}
-      </span>
-      {count > 0 && (
-        <span
-          aria-hidden="true"
-          className="absolute top-1.5 right-1 flex h-4 min-w-4 items-center justify-center rounded-pill bg-foreground px-1 text-[0.625rem] leading-none text-background tabular-nums"
-        >
-          {count > 99 ? "99+" : count}
-        </span>
-      )}
-    </>
-  );
+  return <CountBadge label="Wishlist" count={count} />;
 }
 
 // Rendered by the wishlist page with the server's list, so hearts match after

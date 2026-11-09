@@ -5,6 +5,7 @@ import {
   MAX_QUANTITY,
   buildCart,
   creditHeldStock,
+  orderLines,
   parseCart,
   reconcileCart,
   subtractLines,
@@ -140,5 +141,12 @@ describe("subtractLines", () => {
 
   test("never leaves a negative or zero line", () => {
     assert.deepEqual(subtractLines([{ slug: "a", quantity: 1 }], [{ slug: "a", quantity: 3 }]), []);
+  });
+});
+
+describe("orderLines", () => {
+  test("keeps only the slug and quantity of each item", () => {
+    const order = { items: [{ slug: "a", quantity: 2, name: "A", price: 100 }] };
+    assert.deepEqual(orderLines(order), [{ slug: "a", quantity: 2 }]);
   });
 });

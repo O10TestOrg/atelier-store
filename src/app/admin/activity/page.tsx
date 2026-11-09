@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { HistoryList, kindStyles } from "@/components/admin/history-list";
-import { AdminPager, listHref, param } from "@/components/admin/list-controls";
+import {
+  AdminPager,
+  listHref,
+  pageCount,
+  pageParam,
+  param,
+} from "@/components/admin/list-controls";
 import {
   adminEventAreas,
   adminEventKinds,
@@ -12,7 +18,6 @@ import {
   type AdminEventKind,
 } from "@/lib/admin-event-kinds";
 import { ADMIN_EVENTS_PER_PAGE, getAdminEvents } from "@/lib/admin-events";
-import { parseInteger } from "@/lib/product-form";
 import { getAdminCategories } from "@/lib/products";
 import { requireAdmin } from "@/lib/session";
 
@@ -60,12 +65,12 @@ async function Activity({ searchParams }: Pick<PageProps<"/admin/activity">, "se
     kind: isAdminEventKind(kindParam) ? kindParam : undefined,
     area: isAdminEventArea(areaParam) ? areaParam : undefined,
   };
-  const page = Math.max(1, parseInteger(param(params.page)) ?? 1);
+  const page = pageParam(params.page);
   const [{ events, total }, categories] = await Promise.all([
     getAdminEvents(page, filters),
     getAdminCategories(),
   ]);
-  const pages = Math.max(1, Math.ceil(total / ADMIN_EVENTS_PER_PAGE));
+  const pages = pageCount(total, ADMIN_EVENTS_PER_PAGE);
   const filtered = Boolean(filters.kind || filters.area);
 
   return (

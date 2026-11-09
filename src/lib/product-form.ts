@@ -29,6 +29,10 @@ const IMAGE_PATTERN = /^https:\/\/images\.unsplash\.com\/photo-[A-Za-z0-9-]+\?w=
 // What `/api/admin/uploads` produces: a file under products/ in our Blob store.
 const UPLOAD_PATH_PATTERN = /^\/products\/[A-Za-z0-9._-]+$/;
 
+// What the token route lets `ImageField` upload.
+export const UPLOAD_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+
 // A product photo next/image will load: a sample Unsplash URL, or an upload
 // to this store's Blob host (`getUploadHost()`; null when uploads are off).
 export function isAllowedImageUrl(value: string, uploadHost: string | null) {

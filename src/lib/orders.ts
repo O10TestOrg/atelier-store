@@ -37,7 +37,8 @@ import { STORE_CURRENCY } from "@/lib/catalog";
 import { CHECK_VIOLATION, FOREIGN_KEY_VIOLATION, pgError } from "@/lib/db-errors";
 import { isCheckoutSessionId, isOrderId } from "@/lib/ids";
 import { writeWithEvent, type AdminEventInput } from "@/lib/admin-events";
-import { likePattern, type CheckoutProduct } from "@/lib/products";
+import type { CheckoutProduct } from "@/lib/products";
+import { likePattern } from "@/lib/sql";
 
 export type OrderItem = typeof orderItems.$inferSelect & {
   // The product's current photo; null if the product has since been deleted.

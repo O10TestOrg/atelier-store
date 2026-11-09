@@ -15,26 +15,16 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { products, wishlistItems } from "@/db/schema";
-import { isValidSlug } from "@/lib/cart";
-import { WISHLIST_COOKIE, WISHLIST_MAX_AGE, baseCookieOptions } from "@/lib/cookies";
-
-// Keeps the cookie well under the 4 KB limit.
-export const MAX_WISHLIST = 50;
+import {
+  MAX_WISHLIST,
+  WISHLIST_COOKIE,
+  WISHLIST_MAX_AGE,
+  baseCookieOptions,
+  isValidSlug,
+  parseWishlist,
+} from "@/lib/cookies";
 
 export const wishlistCookieOptions = { ...baseCookieOptions, maxAge: WISHLIST_MAX_AGE };
-
-// Bad JSON or bad entries yield an empty or shorter list rather than an error.
-export function parseWishlist(value: string | null | undefined): string[] {
-  if (!value) return [];
-  let data: unknown;
-  try {
-    data = JSON.parse(value);
-  } catch {
-    return [];
-  }
-  if (!Array.isArray(data)) return [];
-  return [...new Set(data.filter(isValidSlug))].slice(0, MAX_WISHLIST);
-}
 
 export async function readWishlistCookie(): Promise<string[]> {
   return parseWishlist((await cookies()).get(WISHLIST_COOKIE)?.value);

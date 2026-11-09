@@ -4,13 +4,13 @@ import {
   MAX_LINES,
   MAX_QUANTITY,
   creditHeldStock,
-  isValidSlug,
   maxQuantity,
   readCart,
   reconcileCart,
   writeCart,
   type CartLine,
 } from "@/lib/cart";
+import { isValidSlug } from "@/lib/cookies";
 import { readBrowserCheckout } from "@/lib/pending-checkout";
 import { getCartProducts, type Product } from "@/lib/products";
 import { findCountry, writeDeliveryCountry } from "@/lib/shipping";

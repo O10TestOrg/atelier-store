@@ -7,7 +7,7 @@ import { and, asc, count, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { orders, user } from "@/db/schema";
 import { writeWithEvent, type AdminEventInput } from "@/lib/admin-events";
-import { likePattern } from "@/lib/products";
+import { likePattern } from "@/lib/sql";
 
 export type Role = (typeof user.$inferSelect)["role"];
 

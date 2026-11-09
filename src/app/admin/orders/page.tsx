@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
+import {
+  AdminPager,
+  AdminSearch,
+  listHref,
+  pageCount,
+  pageParam,
+  param,
+} from "@/components/admin/list-controls";
 import { OrderStatus } from "@/components/order-status";
 import { OrderItemThumbs } from "@/components/product-thumb";
 import { Notice, SignalIcon } from "@/components/signal";
@@ -15,7 +22,6 @@ import {
   orderReference,
   type AdminOrderFilter,
 } from "@/lib/orders";
-import { parseInteger } from "@/lib/product-form";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -64,13 +70,13 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
   const params = await searchParams;
   const status = param(params.status);
   const filter = isAdminOrderFilter(status) ? status : "completed";
-  const page = Math.max(1, parseInteger(param(params.page)) ?? 1);
+  const page = pageParam(params.page);
   const q = param(params.q).slice(0, 200);
   const [{ orders, total }, attention] = await Promise.all([
     getAdminOrders(filter, page, q),
     countOrdersNeedingAttention(),
   ]);
-  const pages = Math.max(1, Math.ceil(total / ADMIN_ORDERS_PER_PAGE));
+  const pages = pageCount(total, ADMIN_ORDERS_PER_PAGE);
 
   return (
     <>

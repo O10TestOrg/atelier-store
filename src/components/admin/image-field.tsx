@@ -4,12 +4,9 @@ import { upload } from "@vercel/blob/client";
 import { useId, useRef, useState, type ChangeEvent } from "react";
 import { Spinner, TextField } from "@/components/admin/fields";
 import { SignalMessage } from "@/components/signal";
-import { isAllowedImageUrl } from "@/lib/product-form";
+import { UPLOAD_CONTENT_TYPES, UPLOAD_MAX_BYTES, isAllowedImageUrl } from "@/lib/product-form";
 
-// Matches UPLOAD_CONTENT_TYPES and UPLOAD_MAX_BYTES in src/lib/uploads.ts,
-// which the token route enforces.
-const ACCEPT = "image/jpeg,image/png,image/webp,image/avif";
-const MAX_BYTES = 10 * 1024 * 1024;
+const ACCEPT = UPLOAD_CONTENT_TYPES.join(",");
 
 // Lowercase letters, digits, dots and hyphens; Blob adds a random suffix.
 const uploadName = (file: File) =>
@@ -43,11 +40,11 @@ export function ImageField({ defaultValue = "", error, uploadHost }: Props) {
     event.target.value = "";
     if (!file) return;
     setUploadError("");
-    if (!ACCEPT.split(",").includes(file.type)) {
+    if (!UPLOAD_CONTENT_TYPES.includes(file.type)) {
       setUploadError("Choose a JPEG, PNG, WebP or AVIF photo.");
       return;
     }
-    if (file.size > MAX_BYTES) {
+    if (file.size > UPLOAD_MAX_BYTES) {
       setUploadError("Choose a photo under 10 MB.");
       return;
     }

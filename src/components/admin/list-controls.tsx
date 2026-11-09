@@ -1,6 +1,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/components/icons";
+import { parseInteger } from "@/lib/product-form";
 
 // Search box and pager for the admin lists. Both are plain GET links and
 // forms, so filters live in the URL and work without JavaScript.
@@ -87,3 +88,11 @@ export function listHref(path: string, params: Record<string, string | number | 
 // First value of a search param, as a string.
 export const param = (value: string | string[] | undefined) =>
   (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+
+// The `page` search param as a page number; 1 when missing or invalid.
+export const pageParam = (value: string | string[] | undefined) =>
+  Math.max(1, parseInteger(param(value)) ?? 1);
+
+// How many pages `total` rows fill, at least one so an empty list has a page.
+export const pageCount = (total: number, perPage: number) =>
+  Math.max(1, Math.ceil(total / perPage));
