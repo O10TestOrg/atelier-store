@@ -59,7 +59,9 @@ pnpm db:make-admin you@example.com
 pnpm db:make-admin you@example.com --revoke   # remove it again
 ```
 
-The admin area is at `/admin`.
+The admin area is at `/admin`. After the first admin, roles can also be changed on `/admin/customers` (verified accounts only, and never the last admin). Use the CLI to remove a compromised admin when nobody else can sign in.
+
+To upload product photos instead of pasting Unsplash URLs, create a Vercel Blob store and set `BLOB_READ_WRITE_TOKEN` before building.
 
 ## Scripts
 

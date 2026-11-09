@@ -9,6 +9,8 @@ const items = [
   { label: "Products", href: "/admin/products" },
   { label: "Categories", href: "/admin/categories" },
   { label: "Orders", href: "/admin/orders" },
+  { label: "Customers", href: "/admin/customers" },
+  { label: "Activity", href: "/admin/activity" },
 ];
 
 const itemClass = "link-quiet block py-2 lg:py-1.5";

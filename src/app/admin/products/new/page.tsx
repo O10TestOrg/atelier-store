@@ -5,6 +5,7 @@ import { createProduct } from "@/app/admin/products/actions";
 import { ProductForm } from "@/components/admin/product-form";
 import { getAdminCategories } from "@/lib/products";
 import { requireAdmin } from "@/lib/session";
+import { getUploadHost } from "@/lib/uploads";
 
 export const metadata: Metadata = {
   title: "Add product",
@@ -19,6 +20,9 @@ export default function NewProductPage() {
       <header className="mt-8 mb-10">
         <p className="text-eyebrow text-muted">Products</p>
         <h1 className="mt-4 text-heading">Add product</h1>
+        <p className="mt-4 max-w-prose text-muted">
+          New products start as drafts, out of the store, until you publish them.
+        </p>
       </header>
       <Suspense fallback={<div aria-hidden="true" className="h-96 animate-pulse bg-surface" />}>
         <NewProductForm />
@@ -42,5 +46,7 @@ async function NewProductForm() {
       </p>
     );
   }
-  return <ProductForm action={createProduct} categories={categories} />;
+  return (
+    <ProductForm action={createProduct} categories={categories} uploadHost={getUploadHost()} />
+  );
 }

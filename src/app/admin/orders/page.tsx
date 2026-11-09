@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
 import { OrderStatus } from "@/components/order-status";
+import { Notice, SignalIcon } from "@/components/signal";
 import { formatPrice } from "@/lib/catalog";
 import {
   ADMIN_ORDERS_PER_PAGE,
+  countOrdersNeedingAttention,
   getAdminOrders,
   isAdminOrderFilter,
   orderReference,
@@ -24,6 +27,7 @@ const dateFormat = new Intl.DateTimeFormat("en-GB", {
 
 const filters: { value: AdminOrderFilter; label: string }[] = [
   { value: "completed", label: "Completed" },
+  { value: "attention", label: "Needs attention" },
   { value: "paid", label: "Paid" },
   { value: "pending", label: "Pending" },
   { value: "failed", label: "Failed" },
@@ -32,13 +36,12 @@ const filters: { value: AdminOrderFilter; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
-const ordersHref = (filter: AdminOrderFilter, page = 1) => {
-  const params = new URLSearchParams();
-  if (filter !== "completed") params.set("status", filter);
-  if (page > 1) params.set("page", String(page));
-  const query = params.toString();
-  return query ? `/admin/orders?${query}` : "/admin/orders";
-};
+const ordersHref = (filter: AdminOrderFilter, page = 1, q = "") =>
+  listHref("/admin/orders", {
+    status: filter === "completed" ? undefined : filter,
+    q,
+    page,
+  });
 
 export default function AdminOrdersPage({ searchParams }: PageProps<"/admin/orders">) {
   return (
@@ -62,18 +65,43 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
   await requireAdmin("/admin/orders");
 
   const params = await searchParams;
-  const filter = isAdminOrderFilter(params.status) ? params.status : "completed";
-  const page = Math.max(1, parseInteger(params.page) ?? 1);
-  const { orders, total } = await getAdminOrders(filter, page);
+  const status = param(params.status);
+  const filter = isAdminOrderFilter(status) ? status : "completed";
+  const page = Math.max(1, parseInteger(param(params.page)) ?? 1);
+  const q = param(params.q).slice(0, 200);
+  const [{ orders, total }, attention] = await Promise.all([
+    getAdminOrders(filter, page, q),
+    countOrdersNeedingAttention(),
+  ]);
   const pages = Math.max(1, Math.ceil(total / ADMIN_ORDERS_PER_PAGE));
 
   return (
     <>
-      <nav aria-label="Filter by status" className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-body-sm">
+      {attention > 0 && filter !== "attention" && (
+        <Notice tone="warning" className="mt-8">
+          {attention === 1 ? "1 order needs" : `${attention} orders need`} attention: Stripe
+          took a payment the order couldn’t accept.{" "}
+          <Link href={ordersHref("attention")} className="link">
+            Review {attention === 1 ? "it" : "them"}
+          </Link>
+        </Notice>
+      )}
+
+      <div className="mt-8">
+        <AdminSearch
+          action="/admin/orders"
+          label="Search orders"
+          placeholder="Email, name, reference or Stripe id (pi_…, cs_…)"
+          defaultValue={q}
+          keep={{ status: filter === "completed" ? undefined : filter }}
+        />
+      </div>
+
+      <nav aria-label="Filter by status" className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-body-sm">
         {filters.map((f) => (
           <Link
             key={f.value}
-            href={ordersHref(f.value)}
+            href={ordersHref(f.value, 1, q)}
             className="link-quiet aria-[current=page]:underline"
             aria-current={filter === f.value ? "page" : undefined}
           >
@@ -83,7 +111,9 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
       </nav>
 
       {orders.length === 0 ? (
-        <p className="mt-6 border-t pt-10 text-muted">No orders match this filter.</p>
+        <p className="mt-6 border-t pt-10 text-muted">
+          {q ? "No orders match this search." : "No orders match this filter."}
+        </p>
       ) : (
         <div className="mt-6 overflow-x-auto">
           <table className="w-full min-w-[44rem] border-t text-left text-body-sm">
@@ -113,11 +143,27 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
                       </p>
                     </th>
                     <td className="max-w-64 py-4 pr-4">
-                      <p className="break-all">{order.email ?? order.user?.email ?? "—"}</p>
+                      {customerEmail(order) ? (
+                        <Link
+                          href={ordersHref("all", 1, customerEmail(order))}
+                          className="link-quiet break-all"
+                          title="All orders from this email"
+                        >
+                          {customerEmail(order)}
+                        </Link>
+                      ) : (
+                        <p>—</p>
+                      )}
                       <p className="mt-1 text-meta">{order.user ? order.user.name : "Guest"}</p>
                     </td>
                     <td className="py-4 pr-4">
                       <OrderStatus order={order} variant="admin" />
+                      {order.attentionReason && (
+                        <p className="mt-1 flex items-center gap-1.5 text-caption">
+                          <SignalIcon tone="warning" size="caption" />
+                          Needs attention
+                        </p>
+                      )}
                     </td>
                     <td className="py-4 pr-4 text-right tabular-nums">{itemCount}</td>
                     <td className="py-4 text-right tabular-nums">{formatPrice(order.total, order.currency)}</td>
@@ -129,27 +175,16 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
         </div>
       )}
 
-      {pages > 1 && (
-        <nav aria-label="Pages" className="mt-8 flex items-center justify-between gap-4 text-body-sm">
-          {page > 1 ? (
-            <Link href={ordersHref(filter, page - 1)} className="link-quiet">
-              <span aria-hidden="true">←</span> Newer
-            </Link>
-          ) : (
-            <span />
-          )}
-          <p className="text-meta">
-            Page {Math.min(page, pages)} of {pages}
-          </p>
-          {page < pages ? (
-            <Link href={ordersHref(filter, page + 1)} className="link-quiet">
-              Older <span aria-hidden="true">→</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <AdminPager
+        page={page}
+        pages={pages}
+        href={(p) => ordersHref(filter, p, q)}
+        newer="Newer"
+        older="Older"
+      />
     </>
   );
 }
+
+const customerEmail = (order: { email: string | null; user: { email: string } | null }) =>
+  order.email ?? order.user?.email ?? "";

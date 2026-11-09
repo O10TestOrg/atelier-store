@@ -8,7 +8,21 @@
 // overselling under concurrent checkouts.
 import "server-only";
 import type Stripe from "stripe";
-import { and, asc, count, desc, eq, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/db";
 import {
   orderItems,
@@ -16,11 +30,13 @@ import {
   orders,
   products,
   stripeEvents,
+  user,
   type OrderStatus,
 } from "@/db/schema";
 import { STORE_CURRENCY } from "@/lib/catalog";
 import { CHECK_VIOLATION, FOREIGN_KEY_VIOLATION, pgError } from "@/lib/db-errors";
-import type { CheckoutProduct } from "@/lib/products";
+import { writeWithEvent, type AdminEventInput } from "@/lib/admin-events";
+import { likePattern, type CheckoutProduct } from "@/lib/products";
 
 export type Order = typeof orders.$inferSelect & {
   items: (typeof orderItems.$inferSelect)[];
@@ -246,9 +262,24 @@ export async function applyCheckoutSession(
     .select({ status: orders.status, subtotal: orders.subtotal })
     .from(orders)
     .where(eq(orders.id, order.id));
-  if (current?.status !== "paid") {
+  if (current && current.status !== "paid") {
     // Paid, but not for what we expected, or after the order was released.
     // Retrying won't help: flag it for a person to refund or fulfil by hand.
+    // The status stays as it is (only a matching payment makes it paid), and
+    // the shipping details stay off it, so the customer's history doesn't
+    // change; Stripe has the address.
+    const attentionReason =
+      current.status === "pending"
+        ? "Paid on Stripe, but the amount or currency didn’t match this order. Check the payment, then refund it or fulfil the order by hand."
+        : `Paid on Stripe after this order was ${current.status} and its stock released. Refund the payment, or restock and fulfil it by hand.`;
+    await db
+      .update(orders)
+      .set({
+        attentionReason,
+        stripePaymentIntentId: details.stripePaymentIntentId,
+        email: details.email,
+      })
+      .where(and(eq(orders.id, order.id), ne(orders.status, "paid")));
     console.error("Paid Stripe session could not be applied to its order", {
       orderId: order.id,
       sessionId: session.id,
@@ -365,8 +396,9 @@ export async function getLinkedOrder(orderId: string): Promise<Order | undefined
 // Uncached: admins need live statuses, and these must never share a cache entry.
 
 // "completed" is what customers see in their history; "all" adds abandoned,
-// canceled and expired checkouts.
-export const adminOrderFilters = ["completed", "all", ...orderStatuses] as const;
+// canceled and expired checkouts; "attention" is paid sessions the order
+// couldn't accept (`attention_reason`).
+export const adminOrderFilters = ["completed", "attention", "all", ...orderStatuses] as const;
 export type AdminOrderFilter = (typeof adminOrderFilters)[number];
 
 export const isAdminOrderFilter = (value: unknown): value is AdminOrderFilter =>
@@ -376,14 +408,41 @@ export const ADMIN_ORDERS_PER_PAGE = 50;
 
 export type AdminOrder = Order & { user: { name: string; email: string } | null };
 
+const needsAttention = isNotNull(orders.attentionReason);
+
 function adminOrderWhere(filter: AdminOrderFilter) {
   if (filter === "completed") return isVisibleToCustomer;
+  if (filter === "attention") return needsAttention;
   if (filter === "all") return undefined;
   return eq(orders.status, filter);
 }
 
-export async function getAdminOrders(filter: AdminOrderFilter, page: number) {
-  const where = adminOrderWhere(filter);
+// What the admin search box matches: a Stripe payment or session id exactly,
+// an order id or reference by prefix, otherwise part of the receipt email,
+// the account email or the delivery name.
+export function adminOrderSearch(query: string) {
+  const q = query.trim();
+  if (!q) return undefined;
+  if (/^pi_[A-Za-z0-9]+$/.test(q)) return eq(orders.stripePaymentIntentId, q);
+  if (/^cs_[A-Za-z0-9_]+$/.test(q)) return eq(orders.stripeCheckoutSessionId, q);
+
+  const text = or(
+    ilike(orders.email, likePattern(q)),
+    ilike(orders.shippingName, likePattern(q)),
+    inArray(
+      orders.userId,
+      db.select({ id: user.id }).from(user).where(ilike(user.email, likePattern(q))),
+    ),
+  );
+  // References are the first 8 hex digits of the id, shown in capitals.
+  const idPrefix = q.replace(/^#/, "").toLowerCase();
+  return /^[0-9a-f-]{4,36}$/.test(idPrefix)
+    ? or(sql`${orders.id}::text like ${`${idPrefix}%`}`, text)
+    : text;
+}
+
+export async function getAdminOrders(filter: AdminOrderFilter, page: number, query = "") {
+  const where = and(adminOrderWhere(filter), adminOrderSearch(query));
   const [list, [{ total }]] = await Promise.all([
     db.query.orders.findMany({
       where,
@@ -395,6 +454,39 @@ export async function getAdminOrders(filter: AdminOrderFilter, page: number) {
     db.select({ total: count() }).from(orders).where(where),
   ]);
   return { orders: list as AdminOrder[], total };
+}
+
+// For the banner on the orders list.
+export async function countOrdersNeedingAttention() {
+  const [{ total }] = await db.select({ total: count() }).from(orders).where(needsAttention);
+  return total;
+}
+
+// Clears the flag once a person has refunded or fulfilled the payment by
+// hand, keeping the reason in the history. False when it was already clear.
+export async function resolveOrderAttention(
+  order: Pick<Order, "id" | "attentionReason">,
+  note: string,
+  actor: AdminEventInput["actor"],
+) {
+  const rows = await writeWithEvent(
+    db
+      .update(orders)
+      .set({ attentionReason: null })
+      .where(and(eq(orders.id, order.id), needsAttention))
+      .returning({ id: orders.id }),
+    {
+      actor,
+      entity: "order",
+      action: "resolve",
+      label: orderReference(order),
+      changes: {
+        attention: { from: order.attentionReason, to: null },
+        ...(note && { note: { from: null, to: note } }),
+      },
+    },
+  );
+  return rows.length > 0;
 }
 
 export async function getAdminOrder(orderId: string): Promise<AdminOrder | undefined> {

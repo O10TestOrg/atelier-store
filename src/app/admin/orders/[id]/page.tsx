@@ -2,11 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { markAttentionResolved } from "@/app/admin/orders/actions";
+import { HistoryList } from "@/components/admin/history-list";
+import { ResolveAttentionForm } from "@/components/admin/resolve-attention-form";
 import { OrderAddress } from "@/components/order-address";
 import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
+import { Notice } from "@/components/signal";
+import { getEntityHistory } from "@/lib/admin-events";
 import { getAdminOrder, orderReference } from "@/lib/orders";
 import { requireAdmin } from "@/lib/session";
+import { stripePaymentUrl } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Order details",
@@ -17,7 +23,8 @@ const dateFormat = new Intl.DateTimeFormat("en-GB", {
   timeStyle: "short",
 });
 
-// Read-only: order status only moves through Stripe.
+// Read-only: order status only moves through Stripe. The one admin write is
+// clearing "needs attention" once a payment has been dealt with by hand.
 export default function AdminOrderPage({ params }: PageProps<"/admin/orders/[id]">) {
   return (
     <>
@@ -36,6 +43,7 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
   await requireAdmin(`/admin/orders/${encodeURIComponent(id)}`);
   const order = await getAdminOrder(id);
   if (!order) notFound();
+  const history = await getEntityHistory("order", order.id);
 
   return (
     <>
@@ -43,6 +51,26 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
         <p className="text-eyebrow text-muted">Order details</p>
         <h1 className="mt-4 text-heading">Order {orderReference(order)}</h1>
       </header>
+
+      {order.attentionReason && (
+        <Notice tone="warning" className="mt-8">
+          <p className="font-medium">Needs attention</p>
+          <p className="mt-1 max-w-prose">{order.attentionReason}</p>
+          {order.stripePaymentIntentId && (
+            <p className="mt-2">
+              <a
+                href={stripePaymentUrl(order.stripePaymentIntentId)}
+                target="_blank"
+                rel="noreferrer"
+                className="link"
+              >
+                Open the payment in Stripe<span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </p>
+          )}
+          <ResolveAttentionForm action={markAttentionResolved.bind(null, order.id)} />
+        </Notice>
+      )}
 
       <div className="mt-10 grid gap-10 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] xl:gap-12">
         <dl className="self-start border-t text-body-sm">
@@ -74,7 +102,17 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
           </Row>
           {order.email && (
             <Row label="Receipt email">
-              <span className="break-all">{order.email}</span>
+              <a href={`mailto:${order.email}`} className="link-quiet break-all">
+                {order.email}
+              </a>
+              <p className="mt-1 text-meta">
+                <Link
+                  href={`/admin/orders?status=all&q=${encodeURIComponent(order.email)}`}
+                  className="link-quiet"
+                >
+                  All orders from this email
+                </Link>
+              </p>
             </Row>
           )}
           {order.shippingAddress && (
@@ -94,9 +132,17 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
           )}
           {order.stripePaymentIntentId && (
             <Row label="Payment intent">
-              <code className="font-mono text-caption break-all">
-                {order.stripePaymentIntentId}
-              </code>
+              <a
+                href={stripePaymentUrl(order.stripePaymentIntentId)}
+                target="_blank"
+                rel="noreferrer"
+                className="link-quiet"
+              >
+                <code className="font-mono text-caption break-all">
+                  {order.stripePaymentIntentId}
+                </code>
+                <span className="sr-only"> in Stripe (opens in a new tab)</span>
+              </a>
             </Row>
           )}
         </dl>
@@ -108,6 +154,15 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
           <OrderSummary order={order} />
         </section>
       </div>
+
+      {history.length > 0 && (
+        <section aria-labelledby="order-history" className="mt-16">
+          <h2 id="order-history" className="mb-6 text-heading-sm">
+            History
+          </h2>
+          <HistoryList events={history} categoryNames={new Map()} />
+        </section>
+      )}
     </>
   );
 }
