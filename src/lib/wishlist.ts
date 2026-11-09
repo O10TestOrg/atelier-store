@@ -76,6 +76,7 @@ export async function addUserWishlist(userId: string, slugs: string[]) {
     select ${userId}, ${products.id}
     from ${products}
     where ${inArray(products.slug, valid)}
+      and ${products.status} = 'active'
       and ${products.id} not in (
         select product_id from ${wishlistItems} where user_id = ${userId}
       )

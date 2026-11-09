@@ -29,3 +29,10 @@ export function getAppUrl() {
   if (!url) throw new Error("APP_URL is not set");
   return url.replace(/\/+$/, "");
 }
+
+// A payment in the Stripe Dashboard, for admins resolving an order by hand.
+// Test keys (sandboxes included) open the test view.
+export function stripePaymentUrl(paymentIntentId: string) {
+  const test = /^(sk|rk)_test_/.test(process.env.STRIPE_SECRET_KEY ?? "");
+  return `https://dashboard.stripe.com/${test ? "test/" : ""}payments/${encodeURIComponent(paymentIntentId)}`;
+}

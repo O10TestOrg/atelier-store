@@ -18,6 +18,21 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 ];
 
+// Uploaded product photos (`/api/admin/uploads`), served from this project's
+// Blob store. Same derivation as `getUploadHost()` in src/lib/uploads.ts,
+// which can't be imported here; set BLOB_READ_WRITE_TOKEN before building.
+const blobStoreId = process.env.BLOB_READ_WRITE_TOKEN?.split("_")[3];
+const uploadPatterns =
+  blobStoreId && /^[A-Za-z0-9]+$/.test(blobStoreId)
+    ? [
+        {
+          protocol: "https" as const,
+          hostname: `${blobStoreId.toLowerCase()}.public.blob.vercel-storage.com`,
+          pathname: "/products/**",
+        },
+      ]
+    : [];
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
@@ -30,6 +45,7 @@ const nextConfig: NextConfig = {
         pathname: "/photo-*",
         search: "?w=2400&q=80",
       },
+      ...uploadPatterns,
     ],
   },
   async headers() {

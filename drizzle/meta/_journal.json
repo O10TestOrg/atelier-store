@@ -50,6 +50,13 @@
       "when": 1794147647562,
       "tag": "0006_purple_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794149531593,
+      "tag": "0007_cold_roulette",
+      "breakpoints": true
     }
   ]
 }

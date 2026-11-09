@@ -216,7 +216,9 @@ async function main() {
   const rows = productData.map(({ category, ...product }) => {
     const categoryId = categoryIds.get(category);
     if (!categoryId) throw new Error(`Unknown category "${category}"`);
-    return { ...product, categoryId };
+    // Live on first insert. The upsert leaves `status` alone, so re-seeding
+    // never brings back a product an admin archived.
+    return { ...product, categoryId, status: "active" as const, publishedAt: new Date() };
   });
 
   await db

@@ -32,7 +32,9 @@ export function StockForm({ action, stock, productName, layout = "inline" }: Pro
       <div className={`flex items-end gap-2 ${inline ? "" : "flex-wrap"}`}>
         <div className={inline ? "" : "text-body-sm"}>
           <label htmlFor={id} className={inline ? "sr-only" : "mb-2 block"}>
-            {inline ? `Stock for ${productName}` : "Units in stock"}
+            {inline
+              ? `Available to sell for ${productName}, excluding held units`
+              : "Available to sell (excludes held)"}
           </label>
           <input type="hidden" name="expectedStock" value={stock} />
           <input

@@ -10,7 +10,7 @@ import {
 import {
   isValidId,
   parseCategoryName,
-  parseSlug,
+  parseCategorySlug,
   type AdminActionResult,
 } from "@/lib/product-form";
 import { deleteCategory, insertCategory, renameCategory } from "@/lib/products";
@@ -26,13 +26,10 @@ export async function createCategory(
   _previous: CategoryActionResult,
   formData: FormData,
 ): Promise<CategoryActionResult> {
-  await assertAdmin();
+  const admin = await assertAdmin();
 
   const { name, error: nameError } = parseCategoryName(formData.get("name"));
-  const slugValue = formData.get("slug");
-  const { slug, error: slugError } = parseSlug(
-    typeof slugValue === "string" ? slugValue.trim() : "",
-  );
+  const { slug, error: slugError } = parseCategorySlug(formData.get("slug"));
   if (!name || !slug) {
     return {
       ok: false,
@@ -42,7 +39,7 @@ export async function createCategory(
   }
 
   try {
-    await insertCategory({ name, slug });
+    await insertCategory({ name, slug }, admin);
   } catch (error) {
     if (pgError(error).code === UNIQUE_VIOLATION) {
       return {
@@ -63,14 +60,19 @@ export async function updateCategoryName(
   _previous: CategoryActionResult,
   formData: FormData,
 ): Promise<CategoryActionResult> {
-  await assertAdmin();
+  const admin = await assertAdmin();
   if (!isValidId(id)) return { ok: false, message: GENERIC_ERROR };
 
   const { name, error } = parseCategoryName(formData.get("name"));
   if (!name) return { ok: false, message: "Check the name.", fieldErrors: { name: error } };
 
-  if (!(await renameCategory(id, name))) {
-    return { ok: false, message: "This category no longer exists." };
+  try {
+    if (!(await renameCategory(id, name, admin))) {
+      return { ok: false, message: "This category no longer exists." };
+    }
+  } catch (error) {
+    console.error("Could not rename category", { id, error });
+    return { ok: false, message: GENERIC_ERROR };
   }
   updateTag("products");
   return { ok: true, message: "Saved." };
@@ -78,11 +80,11 @@ export async function updateCategoryName(
 
 // Bound to `id`; the previous state useActionState passes is ignored.
 export async function removeCategory(id: number): Promise<CategoryActionResult> {
-  await assertAdmin();
+  const admin = await assertAdmin();
   if (!isValidId(id)) return { ok: false, message: GENERIC_ERROR };
 
   try {
-    if (!(await deleteCategory(id))) {
+    if (!(await deleteCategory(id, admin))) {
       return { ok: false, message: "This category no longer exists." };
     }
   } catch (error) {

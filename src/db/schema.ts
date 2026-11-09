@@ -32,6 +32,11 @@ export const categories = pgTable("categories", {
   name: text("name").notNull(),
 });
 
+// Only `active` products are in the store. New ones start as `draft`;
+// `archived` takes a product out of the store without losing its history.
+export const productStatuses = ["draft", "active", "archived"] as const;
+export type ProductStatus = (typeof productStatuses)[number];
+
 export const products = pgTable(
   "products",
   {
@@ -56,6 +61,13 @@ export const products = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    status: text("status", { enum: productStatuses }).notNull().default("draft"),
+    // First time the product went live. Until then nobody can have it in a
+    // bag or a link, so its slug can still change.
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    // Bumped by every admin edit (not by stock moves, which checkouts make
+    // constantly), so a form saved from a stale page can be refused.
+    version: integer("version").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -66,7 +78,12 @@ export const products = pgTable(
   },
   (table) => [
     index("products_category_id_idx").on(table.categoryId),
+    index("products_status_idx").on(table.status),
     check("products_price_check", sql`${table.price} >= 0`),
+    check(
+      "products_status_check",
+      sql`${table.status} in ('draft', 'active', 'archived')`,
+    ),
     check("products_stock_check", sql`${table.stock} >= 0`),
   ],
 );
@@ -195,12 +212,19 @@ export const orders = pgTable(
     // When the Checkout Session, and so the stock reservation, lapses.
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    // Set when Stripe took a payment the order couldn't accept (wrong amount,
+    // or after the hold was released), for a person to refund or fulfil by
+    // hand. Cleared when an admin marks it resolved.
+    attentionReason: text("attention_reason"),
     ...timestamps,
   },
   (table) => [
     index("orders_user_id_idx").on(table.userId),
     index("orders_status_expires_at_idx").on(table.status, table.expiresAt),
     index("orders_stripe_payment_intent_id_idx").on(table.stripePaymentIntentId),
+    index("orders_attention_idx")
+      .on(table.createdAt)
+      .where(sql`${table.attentionReason} is not null`),
     check(
       "orders_status_check",
       sql`${table.status} in ('pending', 'paid', 'failed', 'expired', 'canceled')`,
@@ -271,6 +295,38 @@ export const checkoutRateLimits = pgTable("checkout_rate_limits", {
   count: integer("count").notNull(),
   windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
 });
+
+// --- Admin history -----------------------------------------------------------
+// Append-only record of admin changes: who, what, and the values before and
+// after. Each row is written in the same statement as the change it records
+// (`src/lib/admin-events.ts`), so the history can't miss one. No foreign keys:
+// it outlives deleted products, categories and admins.
+
+export const adminEvents = pgTable(
+  "admin_events",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    actorId: text("actor_id"),
+    // Snapshot, so the history still names an admin after they're deleted.
+    actorEmail: text("actor_email").notNull(),
+    entity: text("entity", { enum: ["product", "category", "user", "order"] }).notNull(),
+    entityId: text("entity_id").notNull(),
+    action: text("action").notNull(),
+    // What the entity was called at the time, for rows that outlive it.
+    label: text("label").notNull(),
+    changes: jsonb("changes")
+      .$type<Record<string, { from: unknown; to: unknown }>>()
+      .notNull()
+      .default({}),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("admin_events_entity_idx").on(table.entity, table.entityId, table.createdAt),
+    index("admin_events_created_at_idx").on(table.createdAt),
+  ],
+);
 
 // --- Wishlist ----------------------------------------------------------------
 // Signed-in users' saved pieces. Guests keep theirs in the `wishlist` cookie

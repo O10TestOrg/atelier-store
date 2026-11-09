@@ -11,7 +11,7 @@ const sections = [
   {
     href: "/admin/products",
     title: "Products",
-    description: "Add pieces, edit details, prices and categories, and set stock.",
+    description: "Add, publish and archive pieces, edit details and prices, and set stock.",
   },
   {
     href: "/admin/categories",
@@ -21,7 +21,17 @@ const sections = [
   {
     href: "/admin/orders",
     title: "Orders",
-    description: "Look up orders and their items, payment and delivery details.",
+    description: "Search orders, see payment and delivery details, and resolve payments that need attention.",
+  },
+  {
+    href: "/admin/customers",
+    title: "Customers",
+    description: "Find accounts and their orders, and give or remove admin rights.",
+  },
+  {
+    href: "/admin/activity",
+    title: "Activity",
+    description: "Who changed what: every admin edit, with the values before and after.",
   },
 ];
 
@@ -44,7 +54,7 @@ async function AdminOverview() {
         <h1 className="mt-4 text-heading">Overview</h1>
         <p className="mt-4 text-muted">Signed in as {admin.email}.</p>
       </header>
-      <ul className="mt-10 grid gap-px border bg-line sm:grid-cols-3">
+      <ul className="mt-10 grid gap-px border bg-line sm:grid-cols-2 xl:grid-cols-3">
         {sections.map((section) => (
           <li key={section.href} className="bg-background">
             <Link href={section.href} className="group block h-full p-6 md:p-8">

@@ -2,10 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { updateStock } from "@/app/admin/products/actions";
+import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
+import { ProductStatus } from "@/components/admin/product-status";
 import { StockForm } from "@/components/admin/stock-form";
+import { productStatuses, type ProductStatus as Status } from "@/db/schema";
 import { formatPrice } from "@/lib/catalog";
-import { getAdminCategories, getAdminProducts } from "@/lib/products";
+import { parseInteger } from "@/lib/product-form";
+import {
+  ADMIN_PRODUCTS_PER_PAGE,
+  LOW_STOCK,
+  getAdminCategories,
+  getAdminProducts,
+} from "@/lib/products";
 import { requireAdmin } from "@/lib/session";
+import { SignalMessage } from "@/components/signal";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -30,51 +40,120 @@ export default function AdminProductsPage({ searchParams }: PageProps<"/admin/pr
   );
 }
 
+const statusFilters: { value: Status | undefined; label: string }[] = [
+  { value: undefined, label: "Any status" },
+  { value: "active", label: "Live" },
+  { value: "draft", label: "Drafts" },
+  { value: "archived", label: "Archived" },
+];
+
 async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">, "searchParams">) {
   await requireAdmin("/admin/products");
 
-  const { category } = await searchParams;
+  const params = await searchParams;
   const categories = await getAdminCategories();
-  // Ignore anything that isn't a real category slug.
-  const active = categories.find((c) => c.slug === category);
-  const products = await getAdminProducts(active?.slug);
+  // Ignore anything that isn't a real category slug or status.
+  const active = categories.find((c) => c.slug === param(params.category));
+  const status = productStatuses.find((s) => s === param(params.status));
+  const lowStock = param(params.stock) === "low";
+  const q = param(params.q).slice(0, 200);
+  const page = Math.max(1, parseInteger(param(params.page)) ?? 1);
+  const deleted = param(params.deleted) === "1";
+
+  const { products, total } = await getAdminProducts({
+    categorySlug: active?.slug,
+    status,
+    lowStock,
+    q,
+    page,
+  });
+  const pages = Math.max(1, Math.ceil(total / ADMIN_PRODUCTS_PER_PAGE));
+  const filters = {
+    category: active?.slug,
+    status,
+    stock: lowStock ? "low" : undefined,
+    q: q || undefined,
+  };
+  const href = (changes: Partial<typeof filters> & { page?: number }) =>
+    listHref("/admin/products", { ...filters, ...changes });
 
   return (
     <>
-      <nav aria-label="Filter by category" className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-body-sm">
-        <Link
-          href="/admin/products"
-          className="link-quiet aria-[current=page]:underline"
-          aria-current={active ? undefined : "page"}
-        >
-          All
-        </Link>
-        {categories.map((c) => (
+      {deleted && (
+        <SignalMessage tone="success" role="status" className="mt-6">
+          Product deleted.
+        </SignalMessage>
+      )}
+
+      <div className="mt-8 flex flex-col gap-4">
+        <AdminSearch
+          action="/admin/products"
+          label="Search products"
+          placeholder="Name, reference or slug"
+          defaultValue={q}
+          keep={{ category: filters.category, status: filters.status, stock: filters.stock }}
+        />
+        <nav aria-label="Filter by category" className="flex flex-wrap gap-x-6 gap-y-2 text-body-sm">
           <Link
-            key={c.slug}
-            href={`/admin/products?category=${c.slug}`}
+            href={href({ category: undefined })}
             className="link-quiet aria-[current=page]:underline"
-            aria-current={active?.slug === c.slug ? "page" : undefined}
+            aria-current={active ? undefined : "page"}
           >
-            {c.name}
+            All categories
           </Link>
-        ))}
-      </nav>
+          {categories.map((c) => (
+            <Link
+              key={c.slug}
+              href={href({ category: c.slug })}
+              className="link-quiet aria-[current=page]:underline"
+              aria-current={active?.slug === c.slug ? "page" : undefined}
+            >
+              {c.name}
+            </Link>
+          ))}
+        </nav>
+        <nav aria-label="Filter by status and stock" className="flex flex-wrap gap-x-6 gap-y-2 text-body-sm">
+          {statusFilters.map((f) => (
+            <Link
+              key={f.label}
+              href={href({ status: f.value })}
+              className="link-quiet aria-[current=page]:underline"
+              aria-current={status === f.value ? "page" : undefined}
+            >
+              {f.label}
+            </Link>
+          ))}
+          <span aria-hidden="true" className="text-muted">·</span>
+          <Link
+            href={href({ stock: lowStock ? undefined : "low" })}
+            className="link-quiet aria-[current=page]:underline"
+            aria-current={lowStock ? "page" : undefined}
+          >
+            Low stock ({LOW_STOCK} or fewer)
+          </Link>
+        </nav>
+      </div>
 
       {products.length === 0 ? (
-        <p className="mt-10 border-t pt-10 text-muted">No products here yet.</p>
+        <p className="mt-6 border-t pt-10 text-muted">
+          {q || status || lowStock || active ? "No products match these filters." : "No products here yet."}
+        </p>
       ) : (
         <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[46rem] border-t text-left text-body-sm">
+          <table className="w-full min-w-[52rem] border-t text-left text-body-sm">
             <caption className="sr-only">
               Products{active ? ` in ${active.name}` : ""}, with stock you can update
             </caption>
             <thead className="text-meta">
               <tr className="border-b">
                 <th scope="col" className="py-3 pr-4 font-normal">Product</th>
+                <th scope="col" className="py-3 pr-4 font-normal">Status</th>
                 <th scope="col" className="py-3 pr-4 font-normal">Category</th>
                 <th scope="col" className="py-3 pr-4 text-right font-normal">Price</th>
-                <th scope="col" className="py-3 pr-4 font-normal">Stock</th>
+                <th scope="col" className="py-3 pr-4 font-normal">
+                  Available to sell
+                  <span className="block text-caption">Excludes held</span>
+                </th>
                 <th scope="col" className="py-3 pr-4 text-right font-normal">
                   <abbr title="Reserved by checkouts awaiting payment" className="no-underline">
                     Held
@@ -97,6 +176,9 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
                       {product.isNew && " · New"}
                     </p>
                   </th>
+                  <td className="py-4 pr-4 whitespace-nowrap">
+                    <ProductStatus status={product.status} />
+                  </td>
                   <td className="py-4 pr-4">{product.category.name}</td>
                   <td className="py-4 pr-4 text-right tabular-nums">{formatPrice(product.price)}</td>
                   <td className="py-3 pr-4">
@@ -113,10 +195,14 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
                       Edit
                     </Link>
                     <span className="sr-only"> {product.name}</span>
-                    <span aria-hidden="true" className="px-2 text-muted">·</span>
-                    <Link href={`/products/${product.slug}`} className="link-quiet text-muted">
-                      View<span className="sr-only"> {product.name} in the store</span>
-                    </Link>
+                    {product.status === "active" && (
+                      <>
+                        <span aria-hidden="true" className="px-2 text-muted">·</span>
+                        <Link href={`/products/${product.slug}`} className="link-quiet text-muted">
+                          View<span className="sr-only"> {product.name} in the store</span>
+                        </Link>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -124,6 +210,11 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
           </table>
         </div>
       )}
+
+      <p className="mt-4 text-meta">
+        {total} {total === 1 ? "product" : "products"}
+      </p>
+      <AdminPager page={page} pages={pages} href={(p) => href({ page: p })} />
     </>
   );
 }
@@ -131,7 +222,8 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
 function TableSkeleton() {
   return (
     <div aria-hidden="true" className="mt-8">
-      <div className="h-5 w-72 max-w-full animate-pulse bg-surface" />
+      <div className="h-10 w-96 max-w-full animate-pulse bg-surface" />
+      <div className="mt-4 h-5 w-72 max-w-full animate-pulse bg-surface" />
       <div className="mt-6 border-t">
         {[0, 1, 2, 3].map((row) => (
           <div key={row} className="border-b py-4">

@@ -14,6 +14,9 @@ export const PRODUCT_LIMITS = {
   stock: 100_000,
   // £1,000,000.00, in pence.
   price: 100_000_000,
+  // 50p. Lower prices make Stripe refuse the session or, at £0, complete it
+  // without a payment the store would ever treat as paid.
+  minPrice: 50,
 } as const;
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -23,6 +26,27 @@ const FOCUS_PATTERN = /^(?:100|\d{1,2})% (?:100|\d{1,2})%$/;
 // Must match `unsplash()` in catalog.ts and `images.remotePatterns` in
 // next.config.ts, or next/image refuses to load it.
 const IMAGE_PATTERN = /^https:\/\/images\.unsplash\.com\/photo-[A-Za-z0-9-]+\?w=2400&q=80$/;
+// What `/api/admin/uploads` produces: a file under products/ in our Blob store.
+const UPLOAD_PATH_PATTERN = /^\/products\/[A-Za-z0-9._-]+$/;
+
+// A product photo next/image will load: a sample Unsplash URL, or an upload
+// to this store's Blob host (`getUploadHost()`; null when uploads are off).
+export function isAllowedImageUrl(value: string, uploadHost: string | null) {
+  if (IMAGE_PATTERN.test(value)) return true;
+  if (!uploadHost) return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      url.host === uploadHost &&
+      UPLOAD_PATH_PATTERN.test(url.pathname) &&
+      !url.search &&
+      !url.hash
+    );
+  } catch {
+    return false;
+  }
+}
 
 export type ProductField =
   | "name"
@@ -50,7 +74,7 @@ type Parsed<T, F extends string> =
   | { ok: true; data: T }
   | { ok: false; fieldErrors: FieldErrors<F> };
 
-const text = (formData: FormData, name: string) => {
+export const text = (formData: FormData, name: string) => {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
 };
@@ -73,6 +97,10 @@ function parsePrice(value: string) {
   return Number.isSafeInteger(price) && price <= PRODUCT_LIMITS.price ? price : null;
 }
 
+// Pence to the pounds admins type ("1250" or "1250.50").
+export const toPounds = (pence: number) =>
+  pence % 100 === 0 ? String(pence / 100) : (pence / 100).toFixed(2);
+
 function required(value: string, label: string, max: number) {
   if (!value) return `Enter ${label}.`;
   if (value.length > max) return `Keep this under ${max} characters.`;
@@ -89,19 +117,29 @@ export function parseSlug(value: string) {
   return { slug: value };
 }
 
-// `mode: "create"` also reads slug and opening stock, which are fixed or
-// managed separately once the product exists.
+type ParseOptions = {
+  // This store's Blob host, so uploaded photos are accepted.
+  uploadHost: string | null;
+  // Edit only: the product was never published, so its slug can change.
+  slugEditable?: boolean;
+};
+
+// `mode: "create"` also reads slug and opening stock. Once the product exists,
+// stock is managed separately and slug only comes back while `slugEditable`.
 export function parseProductForm(
   formData: FormData,
   mode: "create",
+  options: ParseOptions,
 ): Parsed<ProductDetails & { slug: string; stock: number }, ProductField>;
 export function parseProductForm(
   formData: FormData,
   mode: "edit",
-): Parsed<ProductDetails, ProductField>;
+  options: ParseOptions,
+): Parsed<ProductDetails & { slug?: string }, ProductField>;
 export function parseProductForm(
   formData: FormData,
   mode: "create" | "edit",
+  options: ParseOptions,
 ): Parsed<ProductDetails & { slug?: string; stock?: number }, ProductField> {
   const errors: FieldErrors<ProductField> = {};
   const L = PRODUCT_LIMITS;
@@ -124,9 +162,11 @@ export function parseProductForm(
   errors.imageAlt = required(imageAlt, "a description of the image", L.imageAlt);
   errors.description = required(description, "a description", L.description);
 
-  if (!image) errors.image = "Enter an image URL.";
-  else if (!IMAGE_PATTERN.test(image)) {
-    errors.image = "Use an Unsplash URL ending in ?w=2400&q=80.";
+  if (!image) errors.image = options.uploadHost ? "Upload a photo or enter an image URL." : "Enter an image URL.";
+  else if (!isAllowedImageUrl(image, options.uploadHost)) {
+    errors.image = options.uploadHost
+      ? "Upload a photo, or use an Unsplash URL ending in ?w=2400&q=80."
+      : "Use an Unsplash URL ending in ?w=2400&q=80.";
   }
   if (!FOCUS_PATTERN.test(detailFocus)) {
     errors.detailFocus = "Use two percentages, like 50% 40%.";
@@ -143,14 +183,16 @@ export function parseProductForm(
   const price = parsePrice(priceText);
   if (!priceText) errors.price = "Enter a price.";
   else if (price === null) errors.price = "Enter a price in pounds, like 1250 or 1250.50.";
+  else if (price < L.minPrice) errors.price = `Enter at least £${toPounds(L.minPrice)}.`;
 
   let slug: string | undefined;
   let stock: number | undefined;
-  if (mode === "create") {
+  if (mode === "create" || options.slugEditable) {
     const parsedSlug = parseSlug(text(formData, "slug"));
     slug = parsedSlug.slug;
     errors.slug = parsedSlug.error;
-
+  }
+  if (mode === "create") {
     stock = parseInteger(text(formData, "stock") || "0", L.stock) ?? undefined;
     if (stock === undefined) {
       errors.stock = `Enter a whole number from 0 to ${L.stock.toLocaleString("en-US")}.`;
@@ -176,13 +218,26 @@ export function parseProductForm(
       colour,
       description,
       details,
-      ...(mode === "create" && { slug, stock }),
+      ...(slug !== undefined && { slug }),
+      ...(mode === "create" && { stock }),
     },
   };
 }
 
 export function parseStock(value: unknown) {
   return parseInteger(value, PRODUCT_LIMITS.stock);
+}
+
+// `/collections/new` is New arrivals, a static route that would shadow a
+// category with that slug.
+export const RESERVED_CATEGORY_SLUGS: readonly string[] = ["new"];
+
+export function parseCategorySlug(value: unknown) {
+  const parsed = parseSlug(typeof value === "string" ? value.trim() : "");
+  if (parsed.slug && RESERVED_CATEGORY_SLUGS.includes(parsed.slug)) {
+    return { error: `“${parsed.slug}” is reserved for New arrivals. Choose another slug.` };
+  }
+  return parsed;
 }
 
 export const CATEGORY_NAME_MAX = 60;

@@ -30,6 +30,7 @@ export async function sendRestockAlerts(limit = 100) {
       select restock_alerts.id from restock_alerts
       join products on products.id = restock_alerts.product_id
       where restock_alerts.notified_at is null and products.stock > 0
+        and products.status = 'active'
       order by restock_alerts.id
       limit ${limit}
       for update of restock_alerts skip locked
