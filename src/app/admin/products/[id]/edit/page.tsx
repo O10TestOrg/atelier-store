@@ -96,9 +96,8 @@ async function EditProduct({
         </p>
         {product.held > 0 && (
           <p className="mt-2 max-w-prose text-meta">
-            Doing a stocktake? Enter what’s on the shelf minus the {product.held} held: those
-            are already taken out of this number, and go back in by themselves if the checkout
-            lapses.
+            Stocktake? Enter what’s on the shelf <strong>minus the {product.held} held</strong>.
+            Held pieces return on their own if the checkout lapses.
           </p>
         )}
         <div className="mt-6">
@@ -124,8 +123,7 @@ async function EditProduct({
           History
         </h2>
         <p className="mb-6 max-w-prose text-meta">
-          Every admin change to this product, newest first. Checkouts and released holds move
-          stock too, but aren’t listed: see Orders.
+          Admin changes, newest first. Stock moved by checkouts is in Orders.
         </p>
         <HistoryList
           events={history}

@@ -15,8 +15,7 @@ export default function OrderLookupPage() {
         <p className="text-eyebrow text-muted">Orders</p>
         <h1 className="mt-4 text-heading">Find your order</h1>
         <p className="mt-4 text-muted">
-          Enter your order reference and the email you used at checkout, and we’ll email you a
-          link to view the order.
+          Enter your order reference and checkout email. We’ll email you a link to the order.
         </p>
       </header>
 

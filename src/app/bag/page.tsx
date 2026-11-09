@@ -144,15 +144,14 @@ async function BagContents() {
           <ul className="mt-3 flex flex-col gap-1 text-meta">
             {upgrades.map((rate) => (
               <li key={rate.name}>
-                {rate.name} delivery available at checkout for {formatPrice(rate.amount)}.
+                {rate.name} delivery: <strong>{formatPrice(rate.amount)}</strong> at checkout.
               </li>
             ))}
             {country.zone === "uk" ? (
               <li>Prices include VAT.</li>
             ) : (
               <li>
-                Orders to {country.name} may be charged import duties and taxes on delivery.
-                These are payable by the recipient.
+                Import duties and taxes for {country.name} may be due on delivery.
               </li>
             )}
           </ul>
@@ -232,8 +231,7 @@ function OpenCheckoutNotice({ checkout }: { checkout: BrowserCheckout }) {
   if (checkout?.state === "holding") {
     return (
       <Notice tone="info" role="status" className="mb-6 lg:col-span-12">
-        Your checkout is still open, so we’re holding its pieces for you. Checking out
-        again starts a new one.
+        We’re holding your pieces while your checkout is open. Checking out again starts over.
       </Notice>
     );
   }
