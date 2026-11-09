@@ -6,6 +6,7 @@ import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/lis
 import { ProductStatus } from "@/components/admin/product-status";
 import { StockForm } from "@/components/admin/stock-form";
 import { ProductThumb } from "@/components/product-thumb";
+import { SignalMessage, StatusDot } from "@/components/signal";
 import { productStatuses, type ProductStatus as Status } from "@/db/schema";
 import { formatPrice } from "@/lib/catalog";
 import { parseInteger } from "@/lib/product-form";
@@ -16,7 +17,6 @@ import {
   getAdminProducts,
 } from "@/lib/products";
 import { requireAdmin } from "@/lib/session";
-import { SignalMessage } from "@/components/signal";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -193,7 +193,19 @@ async function ProductTable({ searchParams }: Pick<PageProps<"/admin/products">,
                       stock={product.stock}
                       productName={product.name}
                     />
-                    {product.stock === 0 && <p className="mt-1 text-caption text-muted">Sold out</p>}
+                    {product.stock === 0 ? (
+                      <p className="mt-1 flex items-center gap-1.5 text-caption text-muted">
+                        <StatusDot tone="danger" />
+                        Sold out
+                      </p>
+                    ) : (
+                      product.stock <= LOW_STOCK && (
+                        <p className="mt-1 flex items-center gap-1.5 text-caption text-muted">
+                          <StatusDot tone="warning" />
+                          Low stock
+                        </p>
+                      )
+                    )}
                   </td>
                   <td className="py-4 pr-4 text-right tabular-nums text-muted">{product.held}</td>
                   <td className="py-4 text-right whitespace-nowrap">

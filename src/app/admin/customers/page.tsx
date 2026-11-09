@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { changeRole } from "@/app/admin/customers/actions";
 import { ConfirmAction } from "@/components/admin/confirm-action";
 import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
+import { SignalIcon } from "@/components/signal";
 import { ADMIN_CUSTOMERS_PER_PAGE, getAdminCustomers, type Role } from "@/lib/customers";
 import { parseInteger } from "@/lib/product-form";
 import { requireAdmin } from "@/lib/session";
@@ -27,9 +28,8 @@ export default function AdminCustomersPage({ searchParams }: PageProps<"/admin/c
         <p className="text-eyebrow text-muted">Admin</p>
         <h1 className="mt-4 text-heading">Customers</h1>
         <p className="mt-4 max-w-prose text-muted">
-          Accounts, admins first. Only verified accounts can be made admins, the store always
-          keeps at least one, and you can’t change your own role. Changes apply on the
-          person’s next page load.
+          Admins first. Only <strong>verified</strong> accounts can be made admins, and you
+          can’t change your own role or remove the last admin.
         </p>
       </header>
       <Suspense fallback={<div aria-hidden="true" className="mt-10 h-96 animate-pulse bg-surface" />}>
@@ -101,10 +101,13 @@ async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">
                     <th scope="row" className="max-w-72 py-4 pr-4 font-normal">
                       {customer.name}
                       {isSelf && <span className="text-muted"> (you)</span>}
-                      <p className="mt-1 break-all text-meta">
-                        {customer.email}
-                        {!customer.emailVerified && " · Not verified"}
-                      </p>
+                      <p className="mt-1 break-all text-meta">{customer.email}</p>
+                      {!customer.emailVerified && (
+                        <p className="mt-1 flex items-center gap-1.5 text-caption">
+                          <SignalIcon tone="warning" size="caption" />
+                          Not verified
+                        </p>
+                      )}
                     </th>
                     <td className="py-4 pr-4 whitespace-nowrap">
                       <time dateTime={customer.createdAt.toISOString()}>

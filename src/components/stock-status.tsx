@@ -4,7 +4,7 @@ import type { Product } from "@/lib/products";
 const dotClass = {
   "in-stock": "bg-success",
   "low-stock": "bg-warning",
-  "out-of-stock": "border border-muted",
+  "out-of-stock": "bg-danger",
 };
 
 export function stockLabel(product: Product) {
