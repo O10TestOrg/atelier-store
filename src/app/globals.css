@@ -35,6 +35,8 @@
   --warning: #b07a2a;
   --danger: #b5524a;
   --heart: #d26a72;
+  /* Edits in admin history: a dusty blue, between neutral and alarm. */
+  --change: #4f7396;
 
   --gutter: 1.25rem;
   --section-space: 3rem;
@@ -76,6 +78,7 @@
   --warning: #d6a45a;
   --danger: #e08a80;
   --heart: #e8949a;
+  --change: #8fb0cf;
 }
 
 /* ---------------------------------------------------------------------------
@@ -97,6 +100,7 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-heart: var(--heart);
+  --color-change: var(--change);
 
   /* Typography */
   --font-sans: var(--font-geist-sans), "Helvetica Neue", Helvetica, Arial,

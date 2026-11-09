@@ -1,5 +1,6 @@
 import Form from "next/form";
 import Link from "next/link";
+import { ArrowLeftIcon, ArrowRightIcon } from "@/components/icons";
 
 // Search box and pager for the admin lists. Both are plain GET links and
 // forms, so filters live in the URL and work without JavaScript.
@@ -53,7 +54,7 @@ export function AdminPager({ page, pages, href, newer = "Previous", older = "Nex
     <nav aria-label="Pages" className="mt-8 flex items-center justify-between gap-4 text-body-sm">
       {page > 1 ? (
         <Link href={href(page - 1)} className="link-quiet">
-          <span aria-hidden="true">←</span> {newer}
+          <ArrowLeftIcon /> {newer}
         </Link>
       ) : (
         <span />
@@ -63,7 +64,7 @@ export function AdminPager({ page, pages, href, newer = "Previous", older = "Nex
       </p>
       {page < pages ? (
         <Link href={href(page + 1)} className="link-quiet">
-          {older} <span aria-hidden="true">→</span>
+          {older} <ArrowRightIcon />
         </Link>
       ) : (
         <span />

@@ -6,6 +6,7 @@ import { ProductForm } from "@/components/admin/product-form";
 import { getAdminCategories } from "@/lib/products";
 import { requireAdmin } from "@/lib/session";
 import { getUploadHost } from "@/lib/uploads";
+import { ArrowLeftIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Add product",
@@ -15,7 +16,7 @@ export default function NewProductPage() {
   return (
     <>
       <Link href="/admin/products" className="link-quiet text-body-sm text-muted">
-        <span aria-hidden="true">←</span> All products
+        <ArrowLeftIcon /> All products
       </Link>
       <header className="mt-8 mb-10">
         <p className="text-eyebrow text-muted">Products</p>

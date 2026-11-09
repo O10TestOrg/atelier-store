@@ -2,9 +2,10 @@
 // `writeWithEvent`, which records the event in the same statement as the
 // change, so a change can't happen without its row (or the reverse).
 import "server-only";
-import { and, count, desc, eq, sql, type SQL, type SQLWrapper } from "drizzle-orm";
+import { and, count, desc, eq, not, or, sql, type SQL, type SQLWrapper } from "drizzle-orm";
 import { db } from "@/db";
 import { adminEvents } from "@/db/schema";
+import type { AdminEventArea, AdminEventKind } from "@/lib/admin-event-kinds";
 import type { FieldChanges } from "@/lib/field-changes";
 
 export type AdminEntity = (typeof adminEvents.$inferSelect)["entity"];
@@ -53,15 +54,51 @@ export async function getEntityHistory(entity: AdminEntity, entityId: string, li
 
 export const ADMIN_EVENTS_PER_PAGE = 50;
 
-export async function getAdminEvents(page: number) {
+// `adminEventKind` from `src/lib/admin-event-kinds.ts` in SQL. The coalesces
+// keep every condition true or false, so `not(...)` never meets a null.
+const statusTo = sql`coalesce(${adminEvents.changes} -> 'status' ->> 'to', '')`;
+const roleTo = sql`coalesce(${adminEvents.changes} -> 'role' ->> 'to', '')`;
+const isAction = (entity: AdminEntity, action: string) =>
+  and(eq(adminEvents.entity, entity), eq(adminEvents.action, action));
+
+const kindWhere = {
+  delete: eq(adminEvents.action, "delete"),
+  add: or(
+    isAction("product", "create"),
+    isAction("category", "create"),
+    and(isAction("user", "role"), sql`${roleTo} = 'admin'`),
+  ),
+  publish: or(
+    isAction("order", "resolve"),
+    and(isAction("product", "status"), sql`${statusTo} = 'active'`),
+  ),
+  archive: or(
+    and(isAction("user", "role"), sql`${roleTo} <> 'admin'`),
+    and(isAction("product", "status"), sql`${statusTo} = 'archived'`),
+  ),
+};
+
+function adminEventKindWhere(kind: AdminEventKind) {
+  if (kind !== "edit") return kindWhere[kind];
+  return not(or(kindWhere.delete, kindWhere.add, kindWhere.publish, kindWhere.archive)!);
+}
+
+export type AdminEventFilters = { kind?: AdminEventKind; area?: AdminEventArea };
+
+export async function getAdminEvents(page: number, { kind, area }: AdminEventFilters = {}) {
+  const where = and(
+    kind ? adminEventKindWhere(kind) : undefined,
+    area ? eq(adminEvents.entity, area) : undefined,
+  );
   const [events, [{ total }]] = await Promise.all([
     db
       .select()
       .from(adminEvents)
+      .where(where)
       .orderBy(desc(adminEvents.createdAt), desc(adminEvents.id))
       .limit(ADMIN_EVENTS_PER_PAGE)
       .offset((page - 1) * ADMIN_EVENTS_PER_PAGE),
-    db.select({ total: count() }).from(adminEvents),
+    db.select({ total: count() }).from(adminEvents).where(where),
   ]);
   return { events, total };
 }

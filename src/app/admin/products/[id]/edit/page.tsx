@@ -24,6 +24,7 @@ import {
 import { requireAdmin } from "@/lib/session";
 import { getUploadHost } from "@/lib/uploads";
 import { SignalMessage } from "@/components/signal";
+import { ArrowLeftIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Edit product",
@@ -36,7 +37,7 @@ export default function EditProductPage({
   return (
     <>
       <Link href="/admin/products" className="link-quiet text-body-sm text-muted">
-        <span aria-hidden="true">←</span> All products
+        <ArrowLeftIcon /> All products
       </Link>
       <Suspense fallback={<EditSkeleton />}>
         <EditProduct params={params} searchParams={searchParams} />

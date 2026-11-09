@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/session";
+import { ArrowRightIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: { absolute: "Admin | Atelier" },
@@ -60,9 +61,7 @@ async function AdminOverview() {
             <Link href={section.href} className="group block h-full p-6 md:p-8">
               <h2 className="text-body-sm">
                 {section.title}{" "}
-                <span aria-hidden="true" className="inline-block transition-transform group-hover:translate-x-1">
-                  →
-                </span>
+                <ArrowRightIcon className="transition-transform group-hover:translate-x-1" />
               </h2>
               <p className="mt-2 text-meta">{section.description}</p>
             </Link>

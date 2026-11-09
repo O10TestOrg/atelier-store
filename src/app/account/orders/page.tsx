@@ -5,6 +5,7 @@ import { OrderStatus } from "@/components/order-status";
 import { formatPrice } from "@/lib/catalog";
 import { getUserOrders, orderReference } from "@/lib/orders";
 import { requireUser } from "@/lib/session";
+import { ArrowRightIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Orders",
@@ -76,12 +77,7 @@ async function OrderList() {
                   {formatPrice(order.total, order.currency)}
                 </p>
               </div>
-              <span
-                aria-hidden="true"
-                className="hidden transition-transform group-hover:translate-x-1 sm:block"
-              >
-                →
-              </span>
+              <ArrowRightIcon className="hidden transition-transform group-hover:translate-x-1 sm:block" />
             </Link>
           </li>
         );

@@ -7,6 +7,7 @@ import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
 import { getUserOrder, orderReference, type Order } from "@/lib/orders";
 import { requireUser } from "@/lib/session";
+import { ArrowLeftIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Order details",
@@ -21,7 +22,7 @@ export default function OrderDetailPage({ params }: PageProps<"/account/orders/[
   return (
     <>
       <Link href="/account/orders" className="link-quiet text-body-sm text-muted">
-        <span aria-hidden="true">←</span> All orders
+        <ArrowLeftIcon /> All orders
       </Link>
       <Suspense fallback={<OrderDetailSkeleton />}>
         <OrderDetail params={params} />
