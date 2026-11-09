@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { StatusDot } from "@/components/signal";
 import { WishlistButton } from "@/components/wishlist-button";
 import { formatPrice, getStockState } from "@/lib/catalog";
 import type { Product } from "@/lib/products";
@@ -21,7 +22,10 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="mt-3 flex flex-col gap-1 pr-2">
           {isSoldOut ? (
-            <p className="text-eyebrow text-muted">Sold out</p>
+            <p className="flex items-center gap-1.5 text-eyebrow text-muted">
+              <StatusDot tone="danger" />
+              Sold out
+            </p>
           ) : (
             product.isNew && <p className="text-eyebrow text-muted">New</p>
           )}

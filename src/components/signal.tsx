@@ -31,7 +31,19 @@ export function SignalIcon({ tone, size = "body-sm" }: { tone: Tone; size?: Size
   );
 }
 
-type MessageProps = Omit<ComponentProps<"p">, "children"> & {
+const dots = {
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
+  change: "bg-change",
+};
+
+// A small dot before a short label (eyebrows, table captions).
+export function StatusDot({ tone }: { tone: keyof typeof dots }) {
+  return <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-pill ${dots[tone]}`} />;
+}
+
+type MessageProps =Omit<ComponentProps<"p">, "children"> & {
   tone: Tone;
   size?: Size;
   children?: ReactNode;
