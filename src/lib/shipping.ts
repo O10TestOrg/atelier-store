@@ -29,10 +29,10 @@ export type DeliveryRate = {
 export const RATES: Record<Zone, DeliveryRate[]> = {
   uk: [
     { name: "Standard delivery", amount: 0, minDays: 2, maxDays: 3 },
-    { name: "Next working day", amount: 1000, minDays: 1, maxDays: 1 },
+    { name: "Next working day", amount: 1500, minDays: 1, maxDays: 1 },
   ],
-  europe: [{ name: "Express delivery", amount: 2000, minDays: 3, maxDays: 5 }],
-  world: [{ name: "Express delivery", amount: 3000, minDays: 4, maxDays: 7 }],
+  europe: [{ name: "Express delivery", amount: 2500, minDays: 3, maxDays: 5 }],
+  world: [{ name: "Express delivery", amount: 4500, minDays: 4, maxDays: 7 }],
 };
 
 export const COUNTRIES: { code: CountryCode; name: string; zone: Zone }[] = [
