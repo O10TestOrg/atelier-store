@@ -22,8 +22,8 @@ export default function OrdersPage() {
         <p className="text-eyebrow text-muted">Orders</p>
         <h1 className="mt-4 text-heading">Your orders</h1>
         <p className="mt-4 max-w-prose text-muted">
-          Orders you’ve placed while signed in, and guest orders placed with your confirmed email
-          address, newest first. Select one for its items and delivery details.
+          Newest first. Guest orders made with your <strong>confirmed email</strong> show here
+          too.
         </p>
       </header>
       <Suspense fallback={<OrderListSkeleton />}>
@@ -42,8 +42,7 @@ async function OrderList() {
       <div className="mt-10 border-t pt-10">
         <p className="text-heading-sm">No orders yet</p>
         <p className="mt-2 max-w-prose text-muted">
-          Orders you place while signed in will appear here, along with guest orders placed with
-          your email address once it’s confirmed.
+          Your orders will show here, including guest orders once your email is confirmed.
         </p>
         <Link href="/search" className="btn btn-primary mt-8">
           Shop all

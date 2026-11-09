@@ -103,9 +103,9 @@ function paymentNote(order: Order) {
     case "paid":
       return order.paidAt ? `Paid ${dateFormat.format(order.paidAt)}` : "Paid";
     case "pending":
-      return "Some payment methods take a few days to clear. Your pieces are held until it does.";
+      return "Some payments take a few days to clear. We’re holding your pieces until then.";
     default:
-      return "Your payment didn’t go through, so you haven’t been charged and the pieces are back on sale.";
+      return "Your payment didn’t go through. You haven’t been charged.";
   }
 }
 

@@ -51,8 +51,8 @@ export default function AdminOrdersPage({ searchParams }: PageProps<"/admin/orde
         <p className="text-eyebrow text-muted">Admin</p>
         <h1 className="mt-4 text-heading">Orders</h1>
         <p className="mt-4 max-w-prose text-muted">
-          Newest first. “Completed” shows the orders customers see: paid, plus payments
-          still clearing or failed after checkout. Statuses only change through Stripe.
+          Newest first. “Completed” is what customers see. Statuses change{" "}
+          <strong>only through Stripe</strong>.
         </p>
       </header>
       <Suspense fallback={<div aria-hidden="true" className="mt-10 h-96 animate-pulse bg-surface" />}>

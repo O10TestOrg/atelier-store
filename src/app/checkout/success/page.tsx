@@ -41,8 +41,8 @@ async function Confirmation({
       <div className="mx-auto max-w-prose text-center">
         <h1 className="text-heading">We couldn’t find that order</h1>
         <p className="mt-4 text-muted">
-          If you were charged, your receipt from Stripe has the details. Our client services
-          team can help.
+          If you were charged, your Stripe receipt has the details, and client services can
+          help.
         </p>
         <Link href="/" className="btn btn-primary mt-8">
           Return home
@@ -65,8 +65,8 @@ async function Confirmation({
         </div>
         <p className="mt-4 text-muted">{copy.body}</p>
         <p className="mt-4 text-muted">
-          Delivery and item details are shown only in the browser that placed the order
-          {order.userId ? " and in the account that placed it" : ""}.
+          For privacy, order details show only in the browser
+          {order.userId ? " or account" : ""} that placed it.
         </p>
         {order.userId && !user ? (
           <Link
@@ -136,12 +136,12 @@ function statusCopy(order: Order, showEmail: boolean) {
     case "pending":
       return {
         title: "We’re confirming your payment",
-        body: "Your order is placed and your pieces are held for you. Some payment methods take a few days to clear, and your order is confirmed as soon as the payment does.",
+        body: "Your order is placed and we’re holding your pieces. Some payments take a few days to clear; we’ll confirm as soon as yours does.",
       };
     default:
       return {
         title: "Your payment didn’t go through",
-        body: "You haven’t been charged for this order, and the pieces are back on sale. To order them, add them to your bag again.",
+        body: "You haven’t been charged. To try again, add the pieces to your bag.",
       };
   }
 }

@@ -39,9 +39,8 @@ export default function AdminActivityPage({ searchParams }: PageProps<"/admin/ac
         <p className="text-eyebrow text-muted">Admin</p>
         <h1 className="mt-4 text-heading">Activity</h1>
         <p className="mt-4 max-w-prose text-muted">
-          Every admin change, newest first: products, stock, categories, roles and resolved
-          orders, with the values before and after. It can’t be edited, and it keeps rows for
-          things since deleted.
+          Every admin change, newest first, with before and after values. The log{" "}
+          <strong>can’t be edited</strong> and keeps deleted items.
         </p>
       </header>
       <Suspense fallback={<div aria-hidden="true" className="mt-10 h-96 animate-pulse bg-surface" />}>
