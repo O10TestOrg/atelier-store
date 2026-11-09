@@ -12,11 +12,11 @@ import {
 import { adminEventKind, type AdminEventKind } from "@/lib/admin-event-kinds";
 import type { AdminEvent } from "@/lib/admin-events";
 import { formatPrice } from "@/lib/catalog";
+import { STORE_TIME_ZONE as timeZone } from "@/lib/dates";
 
 // Admin history (`admin_events`) as a timeline, newest first, grouped by day
 // in UK time. Shared by the product edit page and /admin/activity.
 
-const timeZone = "Europe/London";
 const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone, dateStyle: "short" });
 const dayFormat = new Intl.DateTimeFormat("en-GB", {
   timeZone,

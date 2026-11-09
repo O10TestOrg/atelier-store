@@ -6,14 +6,13 @@ import { ConfirmAction } from "@/components/admin/confirm-action";
 import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
 import { SignalIcon } from "@/components/signal";
 import { ADMIN_CUSTOMERS_PER_PAGE, getAdminCustomers, type Role } from "@/lib/customers";
+import { formatShortDate } from "@/lib/dates";
 import { parseInteger } from "@/lib/product-form";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Customers",
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
 
 const roleFilters: { value: Role | undefined; label: string }[] = [
   { value: undefined, label: "Everyone" },
@@ -111,7 +110,7 @@ async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">
                     </th>
                     <td className="py-4 pr-4 whitespace-nowrap">
                       <time dateTime={customer.createdAt.toISOString()}>
-                        {dateFormat.format(customer.createdAt)}
+                        {formatShortDate(customer.createdAt)}
                       </time>
                     </td>
                     <td className="py-4 pr-4 text-right tabular-nums">

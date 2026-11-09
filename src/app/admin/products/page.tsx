@@ -8,11 +8,10 @@ import { StockForm } from "@/components/admin/stock-form";
 import { ProductThumb } from "@/components/product-thumb";
 import { SignalMessage, StatusDot } from "@/components/signal";
 import { productStatuses, type ProductStatus as Status } from "@/db/schema";
-import { formatPrice } from "@/lib/catalog";
+import { LOW_STOCK, formatPrice } from "@/lib/catalog";
 import { parseInteger } from "@/lib/product-form";
 import {
   ADMIN_PRODUCTS_PER_PAGE,
-  LOW_STOCK,
   getAdminCategories,
   getAdminProducts,
 } from "@/lib/products";

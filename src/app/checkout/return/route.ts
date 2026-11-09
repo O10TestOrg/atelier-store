@@ -1,12 +1,12 @@
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import { writeCart } from "@/lib/cart";
-import { applyCheckoutSession, findOrderForSession, releaseOrder } from "@/lib/orders";
+import { isCheckoutSessionId } from "@/lib/ids";
+import { applyCheckoutSession, findOrderForSession, releaseSessionOrder } from "@/lib/orders";
 import { clearPendingCheckout, setCheckoutReceipt } from "@/lib/pending-checkout";
+import { sendRestockAlerts } from "@/lib/restock-alerts";
 import { getStripe } from "@/lib/stripe";
-
-const SESSION_ID = /^cs_[A-Za-z0-9_]{1,250}$/;
 
 // Stripe's success_url. A Route Handler rather than a page so it can clear the
 // bag cookie. The session id in the URL is only a lookup key: what happens next
@@ -15,7 +15,7 @@ const SESSION_ID = /^cs_[A-Za-z0-9_]{1,250}$/;
 // idempotent, so whichever runs second is a no-op.
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("session_id") ?? "";
-  if (!SESSION_ID.test(sessionId)) redirect("/bag");
+  if (!isCheckoutSessionId(sessionId)) redirect("/bag");
 
   let session;
   try {
@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
   }
 
   if (session.status === "expired") {
-    const order = await findOrderForSession(session);
-    if (order && (await releaseOrder(order.id, "expired"))) {
+    if (await releaseSessionOrder(session, "expired")) {
       revalidateTag("products", { expire: 0 });
+      after(() => sendRestockAlerts());
     }
     redirect("/bag?checkout=expired");
   }

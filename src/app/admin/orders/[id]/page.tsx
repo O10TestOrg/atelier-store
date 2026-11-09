@@ -10,6 +10,7 @@ import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
 import { Notice } from "@/components/signal";
 import { getEntityHistory } from "@/lib/admin-events";
+import { formatDateTime } from "@/lib/dates";
 import { getAdminOrder, orderReference } from "@/lib/orders";
 import { requireAdmin } from "@/lib/session";
 import { stripePaymentUrl } from "@/lib/stripe";
@@ -18,11 +19,6 @@ import { ArrowLeftIcon } from "@/components/icons";
 export const metadata: Metadata = {
   title: "Order details",
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", {
-  dateStyle: "long",
-  timeStyle: "short",
-});
 
 // Read-only: order status only moves through Stripe. The one admin write is
 // clearing "needs attention" once a payment has been dealt with by hand.
@@ -169,7 +165,7 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
 }
 
 function Time({ date }: { date: Date }) {
-  return <time dateTime={date.toISOString()}>{dateFormat.format(date)}</time>;
+  return <time dateTime={date.toISOString()}>{formatDateTime(date)}</time>;
 }
 
 // Same label/value rows as the customer order page.

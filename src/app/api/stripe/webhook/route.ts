@@ -3,10 +3,9 @@ import { after } from "next/server";
 import type Stripe from "stripe";
 import {
   applyCheckoutSession,
-  findOrderForSession,
   isEventProcessed,
   markEventProcessed,
-  releaseOrder,
+  releaseSessionOrder,
 } from "@/lib/orders";
 import { sendRestockAlerts } from "@/lib/restock-alerts";
 import { getStripe, getWebhookSecret } from "@/lib/stripe";
@@ -51,13 +50,8 @@ export async function POST(request: Request) {
 }
 
 async function release(session: Stripe.Checkout.Session, status: "failed" | "expired") {
-  const order = await findOrderForSession(session);
-  if (!order) {
-    console.error("Stripe session has no matching order", { sessionId: session.id });
-    return;
-  }
   // Route Handlers can't use updateTag; expire immediately instead.
-  if (await releaseOrder(order.id, status)) {
+  if (await releaseSessionOrder(session, status)) {
     revalidateTag("products", { expire: 0 });
     // A released hold can bring a sold-out piece back.
     after(() => sendRestockAlerts());

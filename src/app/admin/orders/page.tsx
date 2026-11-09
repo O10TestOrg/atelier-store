@@ -6,6 +6,7 @@ import { OrderStatus } from "@/components/order-status";
 import { OrderItemThumbs } from "@/components/product-thumb";
 import { Notice, SignalIcon } from "@/components/signal";
 import { formatPrice } from "@/lib/catalog";
+import { formatShortDateTime } from "@/lib/dates";
 import {
   ADMIN_ORDERS_PER_PAGE,
   countOrdersNeedingAttention,
@@ -20,11 +21,6 @@ import { requireAdmin } from "@/lib/session";
 export const metadata: Metadata = {
   title: "Orders",
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 const filters: { value: AdminOrderFilter; label: string }[] = [
   { value: "completed", label: "Completed" },
@@ -139,7 +135,7 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
                       </Link>
                       <p className="mt-1 text-meta">
                         <time dateTime={order.createdAt.toISOString()}>
-                          {dateFormat.format(order.createdAt)}
+                          {formatShortDateTime(order.createdAt)}
                         </time>
                       </p>
                     </th>

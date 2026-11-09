@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { OrderAddress } from "@/components/order-address";
 import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
+import { isCheckoutSessionId } from "@/lib/ids";
 import { getOrderBySessionId, orderReference, type Order } from "@/lib/orders";
 import { readCheckoutReceipt } from "@/lib/pending-checkout";
 import { getCurrentUser } from "@/lib/session";
@@ -32,7 +33,7 @@ async function Confirmation({
 }: Pick<PageProps<"/checkout/success">, "searchParams">) {
   const { session_id: sessionId } = await searchParams;
   const order =
-    typeof sessionId === "string" && sessionId.startsWith("cs_")
+    isCheckoutSessionId(sessionId)
       ? await getOrderBySessionId(sessionId)
       : undefined;
 

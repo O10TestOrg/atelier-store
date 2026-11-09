@@ -9,14 +9,13 @@ import {
 } from "@/components/account-details-forms";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { Notice } from "@/components/signal";
+import { formatMonthYear } from "@/lib/dates";
 import { requireUser } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Account details",
   robots: { index: false },
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
 
 export default function AccountDetailsPage({ searchParams }: PageProps<"/account/details">) {
   return (
@@ -54,7 +53,7 @@ async function Details({ searchParams }: Pick<PageProps<"/account/details">, "se
         </Notice>
       )}
       <EmailVerificationNotice returnTo="/account/details" />
-      <p className="mt-8 text-meta">Member since {dateFormat.format(user.createdAt)}</p>
+      <p className="mt-8 text-meta">Member since {formatMonthYear(user.createdAt)}</p>
       <div className="mt-2 border-t">
         <ChangeNameForm name={user.name} />
         <ChangeEmailForm email={user.email} />

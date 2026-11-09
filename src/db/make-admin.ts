@@ -1,5 +1,10 @@
 // Gives an existing user the admin role. Run with `pnpm db:make-admin <email>`.
 // Pass `--revoke` to demote them back to customer.
+//
+// This is the way in for the first admin and the break-glass for a
+// compromised one, so unlike /admin/customers it skips the rules: it can
+// demote the last admin, and it writes no `admin_events` row (there's no
+// acting admin to record).
 import { loadEnvConfig } from "@next/env";
 import { eq } from "drizzle-orm";
 import { user } from "./schema";
