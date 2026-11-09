@@ -1,7 +1,8 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { getAdminOrder, resolveOrderAttention, UUID } from "@/lib/orders";
+import { isOrderId } from "@/lib/ids";
+import { getAdminOrder, resolveOrderAttention } from "@/lib/orders";
 import type { AdminActionResult } from "@/lib/product-form";
 import { assertAdmin } from "@/lib/session";
 
@@ -17,7 +18,7 @@ export async function markAttentionResolved(
   formData: FormData,
 ): Promise<AdminActionResult> {
   const admin = await assertAdmin();
-  if (typeof orderId !== "string" || !UUID.test(orderId)) {
+  if (!isOrderId(orderId)) {
     return { ok: false, message: "Something went wrong. Please try again." };
   }
   const note = formData.get("note");

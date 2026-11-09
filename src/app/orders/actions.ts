@@ -1,19 +1,18 @@
 "use server";
 
 import { after } from "next/server";
-import { consumeRateLimit, ORDER_LOOKUP_LIMIT } from "@/lib/checkout-limit";
+import { isValidEmail, normalizeEmail } from "@/lib/account-fields";
+import { getAppUrl } from "@/lib/app-url";
 import { composeEmail, trySendEmail } from "@/lib/email";
 import { createOrderLinkToken, ORDER_LINK_HOURS } from "@/lib/order-link";
 import { findOrdersByReference, orderReference } from "@/lib/orders";
-import { getAppUrl } from "@/lib/stripe";
+import { consumeRateLimit, ORDER_LOOKUP_LIMIT } from "@/lib/rate-limit";
 
 export type LookupState = {
   ok: boolean;
   message: string;
   fieldErrors?: { reference?: string; email?: string };
 };
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Guest order lookup. Anyone can call it, so the reply never says whether an
 // order matched: the link only goes to the email on the order, and emails are
@@ -23,16 +22,15 @@ export async function requestOrderLink(
   formData: FormData,
 ): Promise<LookupState> {
   const rawReference = formData.get("reference");
-  const rawEmail = formData.get("email");
   const reference =
     typeof rawReference === "string" ? rawReference.replace(/[\s#-]/g, "").toUpperCase() : "";
-  const email = typeof rawEmail === "string" ? rawEmail.trim().slice(0, 254) : "";
+  const email = normalizeEmail(formData.get("email"));
 
   const fieldErrors: LookupState["fieldErrors"] = {};
   if (!/^[0-9A-F]{8}$/.test(reference)) {
     fieldErrors.reference = "Enter the 8-character reference from your confirmation, like 1A2B3C4D.";
   }
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     fieldErrors.email = "Enter the email address you used at checkout.";
   }
   if (fieldErrors.reference || fieldErrors.email) {

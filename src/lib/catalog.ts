@@ -55,11 +55,13 @@ export const hero = {
 
 export type StockState = "in-stock" | "low-stock" | "out-of-stock";
 
-const LOW_STOCK_THRESHOLD = 3;
+// At or below this many units, the shop says "Only N left" and the admin
+// lists the product under "Low stock".
+export const LOW_STOCK = 3;
 
-export function getStockState(product: Product): StockState {
+export function getStockState(product: Pick<Product, "stock">): StockState {
   if (product.stock <= 0) return "out-of-stock";
-  if (product.stock <= LOW_STOCK_THRESHOLD) return "low-stock";
+  if (product.stock <= LOW_STOCK) return "low-stock";
   return "in-stock";
 }
 
@@ -104,8 +106,10 @@ export const campaigns: Campaign[] = [
 ];
 
 // Where the contact page, receipts and account pages send customers. Emails
-// sent by the store use it as their reply-to address.
-export const CLIENT_SERVICES_EMAIL = "clientservices@atelier.example";
+// sent by the store use it as their reply-to address. Read at build time on
+// the static contact page, so set it before building.
+export const CLIENT_SERVICES_EMAIL =
+  process.env.CLIENT_SERVICES_EMAIL || "clientservices@atelier.example";
 
 export const services = [
   {

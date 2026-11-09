@@ -2,14 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
+import { Field } from "@/components/auth-form";
+import { SignalMessage } from "@/components/signal";
 import {
-  EMAIL_PATTERN,
-  Field,
+  isValidEmail,
   MAX_NAME_LENGTH,
   MAX_PASSWORD_LENGTH,
   MIN_PASSWORD_LENGTH,
-} from "@/components/auth-form";
-import { SignalMessage } from "@/components/signal";
+} from "@/lib/account-fields";
 import { clearWishlistCookie } from "@/components/wishlist-state";
 import { authClient } from "@/lib/auth-client";
 
@@ -133,7 +133,7 @@ export function ChangeEmailForm({ email }: { email: string }) {
     const form = event.currentTarget;
     const value = String(new FormData(form).get("email") ?? "").trim().toLowerCase();
     setResult(null);
-    if (!EMAIL_PATTERN.test(value)) {
+    if (!isValidEmail(value)) {
       return setFieldError("Enter a valid email address, like name@example.com.");
     }
     if (value === email.toLowerCase()) return setFieldError("This is already your email address.");

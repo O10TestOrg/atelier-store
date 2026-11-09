@@ -1,7 +1,7 @@
 import { Children, type ComponentProps, type ReactNode } from "react";
 import { AlertIcon, CheckIcon, InfoIcon } from "@/components/icons";
 
-// Signal color lives on a small glyph, like the saved wishlist heart; the
+// Signal colour lives on a small glyph, like the saved wishlist heart; the
 // message itself stays ink. The glyph fades in when it appears.
 
 export type Tone = "success" | "warning" | "danger" | "info";
@@ -36,14 +36,23 @@ const dots = {
   warning: "bg-warning",
   danger: "bg-danger",
   change: "bg-change",
+  muted: "bg-muted",
 };
 
-// A small dot before a short label (eyebrows, table captions).
-export function StatusDot({ tone }: { tone: keyof typeof dots }) {
-  return <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-pill ${dots[tone]}`} />;
+export type DotTone = keyof typeof dots;
+
+// A small dot before a short label: `sm` for eyebrows and table captions,
+// `md` for status lines (stock, order and product status).
+export function StatusDot({ tone, size = "sm" }: { tone: DotTone; size?: "sm" | "md" }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`${size === "sm" ? "size-1.5" : "size-2"} shrink-0 rounded-pill transition-colors ${dots[tone]}`}
+    />
+  );
 }
 
-type MessageProps =Omit<ComponentProps<"p">, "children"> & {
+type MessageProps = Omit<ComponentProps<"p">, "children"> & {
   tone: Tone;
   size?: Size;
   children?: ReactNode;

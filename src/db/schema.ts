@@ -15,6 +15,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { adminEventAreas } from "../lib/admin-event-kinds";
+import type { FieldChanges } from "../lib/field-changes";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -287,9 +289,10 @@ export const stripeEvents = pgTable(
   (table) => [index("stripe_events_processed_at_idx").on(table.processedAt)],
 );
 
-// Fixed-window counters for `startCheckout`, keyed by client IP. Separate from
-// Better Auth's `rate_limit`, which deletes rows older than its own (shorter)
-// windows. Written through `src/lib/checkout-limit.ts`.
+// Fixed-window counters keyed by scope and client IP: checkout, order lookup
+// and restock alerts. Named for checkout, its first use. Separate from Better
+// Auth's `rate_limit`, which deletes rows older than its own (shorter)
+// windows. Written through `src/lib/rate-limit.ts`.
 export const checkoutRateLimits = pgTable("checkout_rate_limits", {
   key: text("key").primaryKey(),
   count: integer("count").notNull(),
@@ -309,13 +312,13 @@ export const adminEvents = pgTable(
     actorId: text("actor_id"),
     // Snapshot, so the history still names an admin after they're deleted.
     actorEmail: text("actor_email").notNull(),
-    entity: text("entity", { enum: ["product", "category", "user", "order"] }).notNull(),
+    entity: text("entity", { enum: adminEventAreas }).notNull(),
     entityId: text("entity_id").notNull(),
     action: text("action").notNull(),
     // What the entity was called at the time, for rows that outlive it.
     label: text("label").notNull(),
     changes: jsonb("changes")
-      .$type<Record<string, { from: unknown; to: unknown }>>()
+      .$type<FieldChanges>()
       .notNull()
       .default({}),
     createdAt: timestamp("created_at", { withTimezone: true })

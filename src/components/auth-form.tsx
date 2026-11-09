@@ -13,6 +13,12 @@ import {
   type ReactNode,
 } from "react";
 import { EyeIcon, EyeOffIcon } from "@/components/icons";
+import {
+  isValidEmail,
+  MAX_NAME_LENGTH,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from "@/lib/account-fields";
 import { authClient } from "@/lib/auth-client";
 import { safeRedirectPath } from "@/lib/redirect";
 import { Notice, SignalMessage } from "@/components/signal";
@@ -22,12 +28,6 @@ type FieldName = "name" | "email" | "password";
 type FieldErrors = Partial<Record<FieldName, ReactNode>>;
 type FormError = { message: string; focus: boolean };
 
-// Keep in sync with `emailAndPassword` in src/lib/auth.ts (128 is Better
-// Auth's default maximum).
-export const MIN_PASSWORD_LENGTH = 10;
-export const MAX_PASSWORD_LENGTH = 128;
-export const MAX_NAME_LENGTH = 100;
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const fieldsFor: Record<Mode, FieldName[]> = {
   "sign-in": ["email", "password"],
@@ -318,7 +318,7 @@ function validate(mode: Mode, name: FieldName, value: string): string | undefine
     case "email": {
       const email = value.trim();
       if (!email) return "Enter your email address.";
-      if (!EMAIL_PATTERN.test(email)) {
+      if (!isValidEmail(email)) {
         return "Enter a valid email address, like name@example.com.";
       }
       return;

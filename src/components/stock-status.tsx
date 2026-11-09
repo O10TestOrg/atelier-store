@@ -1,10 +1,11 @@
-import { getStockState } from "@/lib/catalog";
+import { StatusDot, type DotTone } from "@/components/signal";
+import { getStockState, type StockState } from "@/lib/catalog";
 import type { Product } from "@/lib/products";
 
-const dotClass = {
-  "in-stock": "bg-success",
-  "low-stock": "bg-warning",
-  "out-of-stock": "bg-danger",
+const tones: Record<StockState, DotTone> = {
+  "in-stock": "success",
+  "low-stock": "warning",
+  "out-of-stock": "danger",
 };
 
 export function stockLabel(product: Product) {
@@ -21,10 +22,7 @@ export function stockLabel(product: Product) {
 export function StockStatus({ product }: { product: Product }) {
   return (
     <p className="flex items-center gap-2 text-body-sm">
-      <span
-        aria-hidden="true"
-        className={`size-2 rounded-pill transition-colors ${dotClass[getStockState(product)]}`}
-      />
+      <StatusDot tone={tones[getStockState(product)]} size="md" />
       {stockLabel(product)}
     </p>
   );

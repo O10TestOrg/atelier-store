@@ -3,17 +3,22 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { changeRole } from "@/app/admin/customers/actions";
 import { ConfirmAction } from "@/components/admin/confirm-action";
-import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
+import {
+  AdminPager,
+  AdminSearch,
+  listHref,
+  pageCount,
+  pageParam,
+  param,
+} from "@/components/admin/list-controls";
 import { SignalIcon } from "@/components/signal";
 import { ADMIN_CUSTOMERS_PER_PAGE, getAdminCustomers, type Role } from "@/lib/customers";
-import { parseInteger } from "@/lib/product-form";
+import { formatShortDate } from "@/lib/dates";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Customers",
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
 
 const roleFilters: { value: Role | undefined; label: string }[] = [
   { value: undefined, label: "Everyone" },
@@ -46,9 +51,9 @@ async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">
   const roleParam = param(params.role);
   const role = roleFilters.find((f) => f.value === roleParam)?.value;
   const q = param(params.q).slice(0, 200);
-  const page = Math.max(1, parseInteger(param(params.page)) ?? 1);
+  const page = pageParam(params.page);
   const { customers, total } = await getAdminCustomers({ q, role, page });
-  const pages = Math.max(1, Math.ceil(total / ADMIN_CUSTOMERS_PER_PAGE));
+  const pages = pageCount(total, ADMIN_CUSTOMERS_PER_PAGE);
   const href = (changes: { role?: Role; page?: number }) =>
     listHref("/admin/customers", { role, q, ...changes });
 
@@ -111,7 +116,7 @@ async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">
                     </th>
                     <td className="py-4 pr-4 whitespace-nowrap">
                       <time dateTime={customer.createdAt.toISOString()}>
-                        {dateFormat.format(customer.createdAt)}
+                        {formatShortDate(customer.createdAt)}
                       </time>
                     </td>
                     <td className="py-4 pr-4 text-right tabular-nums">

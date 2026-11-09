@@ -2,10 +2,9 @@
 // `/api/admin/uploads` only hands out short-lived upload tokens. Without
 // `BLOB_READ_WRITE_TOKEN` uploads are off and product images must be
 // Unsplash URLs.
+// The type and size limits live in src/lib/product-form.ts, so the client
+// field can share them.
 import "server-only";
-
-export const UPLOAD_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
 // The token reads `vercel_blob_rw_<storeId>_<secret>`, and the store serves
 // public files from `<storeid>.public.blob.vercel-storage.com`. Keep in step

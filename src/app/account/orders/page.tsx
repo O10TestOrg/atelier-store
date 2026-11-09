@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { OrderStatus } from "@/components/order-status";
 import { OrderItemThumbs } from "@/components/product-thumb";
 import { formatPrice } from "@/lib/catalog";
+import { formatDate } from "@/lib/dates";
 import { getUserOrders, orderReference } from "@/lib/orders";
 import { requireUser } from "@/lib/session";
 import { ArrowRightIcon } from "@/components/icons";
@@ -12,8 +13,6 @@ export const metadata: Metadata = {
   title: "Orders",
   robots: { index: false },
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 export default function OrdersPage() {
   return (
@@ -67,7 +66,7 @@ async function OrderList() {
                   <h2 className="text-body-sm">Order {orderReference(order)}</h2>
                   <p className="mt-1 text-meta">
                     <time dateTime={order.createdAt.toISOString()}>
-                      {dateFormat.format(order.createdAt)}
+                      {formatDate(order.createdAt)}
                     </time>{" "}
                     · {itemCount} {itemCount === 1 ? "item" : "items"}
                   </p>

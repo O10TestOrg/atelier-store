@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { OrderAddress } from "@/components/order-address";
 import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
+import { formatDate } from "@/lib/dates";
 import { readOrderLinkToken } from "@/lib/order-link";
 import { getLinkedOrder, orderReference } from "@/lib/orders";
 
@@ -12,8 +13,6 @@ export const metadata: Metadata = {
   title: "Your order",
   robots: { index: false },
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 // Opened from the link the guest order lookup emails. The signed token is the
 // only credential, so an invalid or expired one shows the same page as an
@@ -60,7 +59,7 @@ async function OrderView({ searchParams }: Pick<PageProps<"/orders/view">, "sear
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-12">
         <dl className="self-start border-t text-body-sm">
           <Row label="Placed">
-            <time dateTime={order.createdAt.toISOString()}>{dateFormat.format(order.createdAt)}</time>
+            <time dateTime={order.createdAt.toISOString()}>{formatDate(order.createdAt)}</time>
           </Row>
           <Row label="Payment">
             <OrderStatus order={order} />

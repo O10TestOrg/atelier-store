@@ -1,7 +1,7 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { getAppUrl } from "@/lib/stripe";
 import { AuthorizationError, assertAdmin } from "@/lib/session";
-import { UPLOAD_CONTENT_TYPES, UPLOAD_MAX_BYTES, getUploadHost } from "@/lib/uploads";
+import { UPLOAD_CONTENT_TYPES, UPLOAD_MAX_BYTES } from "@/lib/product-form";
+import { getUploadHost } from "@/lib/uploads";
 
 // Issues client upload tokens for product photos (`ImageField`). The browser
 // then uploads to Blob directly, so large files never pass through here.
@@ -9,7 +9,7 @@ import { UPLOAD_CONTENT_TYPES, UPLOAD_MAX_BYTES, getUploadHost } from "@/lib/upl
 // before the role check: cookies alone don't prove the admin sent it.
 export async function POST(request: Request) {
   if (!getUploadHost()) return Response.json({ error: "Uploads are off." }, { status: 404 });
-  if (request.headers.get("origin") !== new URL(getAppUrl()).origin) {
+  if (request.headers.get("origin") !== new URL(request.url).origin) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

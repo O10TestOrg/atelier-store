@@ -10,6 +10,7 @@ import { DeliveryCountrySelect } from "@/components/delivery-country-select";
 import { ANNOUNCER_ID, PAGE_HEADING_ID } from "@/components/focus-after-removal";
 import { buildCart, creditHeldStock, readCart, reconcileCart, type BagLine } from "@/lib/cart";
 import { formatPrice, services } from "@/lib/catalog";
+import { isCheckoutSessionId } from "@/lib/ids";
 import { orderReference } from "@/lib/orders";
 import { readBrowserCheckout, type BrowserCheckout } from "@/lib/pending-checkout";
 import { getCartProducts } from "@/lib/products";
@@ -246,8 +247,6 @@ function OpenCheckoutNotice({ checkout }: { checkout: BrowserCheckout }) {
   return null;
 }
 
-const SESSION_ID = /^cs_[A-Za-z0-9_]{1,250}$/;
-
 // One-off messages after a round trip to Stripe, from /checkout/cancel,
 // /checkout/return or `settleCheckout`. The stock and bag are already settled.
 async function CheckoutNotice({ searchParams }: Pick<PageProps<"/bag">, "searchParams">) {
@@ -265,7 +264,7 @@ async function CheckoutNotice({ searchParams }: Pick<PageProps<"/bag">, "searchP
     <Notice tone={notice.tone} role="status" className="mt-8">
       <ClearCheckoutParams />
       {notice.message}
-      {checkout === "placed" && typeof sessionId === "string" && SESSION_ID.test(sessionId) && (
+      {checkout === "placed" && isCheckoutSessionId(sessionId) && (
         <>
           {" "}
           <Link href={`/checkout/success?session_id=${sessionId}`} className="link">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { CountBadge } from "@/components/count-badge";
 import { useCookie, writeCookie } from "@/components/use-cookie";
 import { CART_COUNT_COOKIE, CART_MAX_AGE } from "@/lib/cookies";
 
@@ -16,21 +17,7 @@ export function BagCount() {
   const raw = useCookie(CART_COUNT_COOKIE, CHANGE_EVENT);
   const count = /^\d+$/.test(raw) ? Number(raw) : 0;
 
-  return (
-    <>
-      <span className="sr-only">
-        Shopping bag{count > 0 && `, ${count} ${count === 1 ? "item" : "items"}`}
-      </span>
-      {count > 0 && (
-        <span
-          aria-hidden="true"
-          className="absolute top-1.5 right-1 flex h-4 min-w-4 items-center justify-center rounded-pill bg-foreground px-1 text-[0.625rem] leading-none text-background tabular-nums"
-        >
-          {count > 99 ? "99+" : count}
-        </span>
-      )}
-    </>
-  );
+  return <CountBadge label="Shopping bag" count={count} />;
 }
 
 // Rendered by the bag page with the reconciled count, so the badge matches

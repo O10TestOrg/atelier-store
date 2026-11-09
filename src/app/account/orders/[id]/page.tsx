@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { OrderAddress } from "@/components/order-address";
 import { OrderStatus } from "@/components/order-status";
 import { OrderSummary } from "@/components/order-summary";
+import { formatDate } from "@/lib/dates";
 import { getUserOrder, orderReference, type Order } from "@/lib/orders";
 import { requireUser } from "@/lib/session";
 import { ArrowLeftIcon } from "@/components/icons";
@@ -13,8 +14,6 @@ export const metadata: Metadata = {
   title: "Order details",
   robots: { index: false },
 };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 // Private to the signed-in customer, so nothing is prerendered past the back
 // link: the session, params and order are all read behind <Suspense>.
@@ -48,7 +47,7 @@ async function OrderDetail({ params }: Pick<PageProps<"/account/orders/[id]">, "
         <dl className="self-start border-t text-body-sm">
           <Row label="Placed">
             <time dateTime={order.createdAt.toISOString()}>
-              {dateFormat.format(order.createdAt)}
+              {formatDate(order.createdAt)}
             </time>
           </Row>
           <Row label="Payment">
@@ -101,7 +100,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 function paymentNote(order: Order) {
   switch (order.status) {
     case "paid":
-      return order.paidAt ? `Paid ${dateFormat.format(order.paidAt)}` : "Paid";
+      return order.paidAt ? `Paid ${formatDate(order.paidAt)}` : "Paid";
     case "pending":
       return "Some payments take a few days to clear. We’re holding your pieces until then.";
     default:

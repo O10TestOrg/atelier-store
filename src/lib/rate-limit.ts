@@ -1,10 +1,12 @@
-// Per-IP limit on starting checkout. Each start reserves stock for 31 minutes
-// and needs no account, so without this a script could make the whole
-// catalogue show sold out. The per-browser cap (one pending checkout, see
-// `startCheckout`) handles honest repeat clicks; this handles cookie-less ones.
+// Per-IP fixed-window limits on the anonymous actions that cost something:
+// starting checkout, the guest order lookup and back-in-stock alerts. Each
+// scope keys its own counters.
 //
-// The same counters, under their own key prefix, limit the other anonymous
-// forms that send email: the guest order lookup and back-in-stock alerts.
+// Checkout matters most. Each start reserves stock for 31 minutes and needs no
+// account, so without this a script could make the whole catalogue show sold
+// out. The per-browser cap (one pending checkout, see `startCheckout`) handles
+// honest repeat clicks; this handles cookie-less ones. The other two send
+// email.
 import "server-only";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -13,7 +15,7 @@ import { checkoutRateLimits } from "@/db/schema";
 
 type Limit = { max: number; windowMinutes: number };
 
-export const CHECKOUT_LIMIT: Limit = { max: 10, windowMinutes: 10 };
+const CHECKOUT_LIMIT: Limit = { max: 10, windowMinutes: 10 };
 export const ORDER_LOOKUP_LIMIT: Limit = { max: 5, windowMinutes: 10 };
 export const RESTOCK_ALERT_LIMIT: Limit = { max: 10, windowMinutes: 10 };
 
@@ -48,7 +50,7 @@ export async function consumeRateLimit(scope: string, limit: Limit) {
 export const consumeCheckoutAttempt = () => consumeRateLimit("checkout", CHECKOUT_LIMIT);
 
 // Old windows are dead weight; the scheduled sweep clears them.
-export async function pruneCheckoutAttempts() {
+export async function pruneRateLimits() {
   await db
     .delete(checkoutRateLimits)
     .where(sql`${checkoutRateLimits.windowStart} < now() - interval '1 day'`);

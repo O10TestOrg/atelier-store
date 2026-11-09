@@ -35,8 +35,10 @@ import {
 } from "@/db/schema";
 import { STORE_CURRENCY } from "@/lib/catalog";
 import { CHECK_VIOLATION, FOREIGN_KEY_VIOLATION, pgError } from "@/lib/db-errors";
+import { isCheckoutSessionId, isOrderId } from "@/lib/ids";
 import { writeWithEvent, type AdminEventInput } from "@/lib/admin-events";
-import { likePattern, type CheckoutProduct } from "@/lib/products";
+import type { CheckoutProduct } from "@/lib/products";
+import { likePattern } from "@/lib/sql";
 
 export type OrderItem = typeof orderItems.$inferSelect & {
   // The product's current photo; null if the product has since been deleted.
@@ -169,10 +171,9 @@ export async function getLapsedPendingOrders(limit: number, graceMinutes = 5) {
     .limit(limit);
 }
 
-export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function getPendingOrder(orderId: string) {
-  if (!UUID.test(orderId)) return undefined;
+  if (!isOrderId(orderId)) return undefined;
   const [order] = await db
     .select()
     .from(orders)
@@ -185,7 +186,7 @@ export async function getPendingOrder(orderId: string) {
 // browser's checkout became. Callers must already know the id is theirs (the
 // httpOnly pending_checkout cookie).
 export async function getCheckoutOrder(orderId: string): Promise<Order | undefined> {
-  if (!UUID.test(orderId)) return undefined;
+  if (!isOrderId(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: eq(orders.id, orderId),
     with: { items },
@@ -196,7 +197,7 @@ export async function getCheckoutOrder(orderId: string): Promise<Order | undefin
 // client_reference_id and (once attached) the stored session id.
 export async function findOrderForSession(session: Stripe.Checkout.Session) {
   const orderId = session.metadata?.orderId;
-  if (!orderId || !UUID.test(orderId) || session.client_reference_id !== orderId) {
+  if (!orderId || !isOrderId(orderId) || session.client_reference_id !== orderId) {
     return null;
   }
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
@@ -205,6 +206,21 @@ export async function findOrderForSession(session: Stripe.Checkout.Session) {
     return null;
   }
   return order;
+}
+
+// Releases the hold of a session that expired or failed, for the webhook and
+// /checkout/return. True when this call released it, so the caller refreshes
+// product data and sends restock alerts once.
+export async function releaseSessionOrder(
+  session: Stripe.Checkout.Session,
+  status: "failed" | "expired",
+) {
+  const order = await findOrderForSession(session);
+  if (!order) {
+    console.error("Stripe session has no matching order", { sessionId: session.id });
+    return false;
+  }
+  return releaseOrder(order.id, status);
 }
 
 // What the session charged on top of the items: the delivery option the
@@ -353,7 +369,7 @@ export async function getUserOrder(
   userId: string,
   orderId: string,
 ): Promise<Order | undefined> {
-  if (!UUID.test(orderId)) return undefined;
+  if (!isOrderId(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: and(eq(orders.id, orderId), eq(orders.userId, userId), isVisibleToCustomer),
     with: { items },
@@ -390,7 +406,7 @@ export async function findOrdersByReference(reference: string, email: string) {
 
 // One order for a holder of a signed order link (`src/lib/order-link.ts`).
 export async function getLinkedOrder(orderId: string): Promise<Order | undefined> {
-  if (!UUID.test(orderId)) return undefined;
+  if (!isOrderId(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: and(eq(orders.id, orderId), isVisibleToCustomer),
     with: { items },
@@ -430,7 +446,7 @@ export function adminOrderSearch(query: string) {
   const q = query.trim();
   if (!q) return undefined;
   if (/^pi_[A-Za-z0-9]+$/.test(q)) return eq(orders.stripePaymentIntentId, q);
-  if (/^cs_[A-Za-z0-9_]+$/.test(q)) return eq(orders.stripeCheckoutSessionId, q);
+  if (isCheckoutSessionId(q)) return eq(orders.stripeCheckoutSessionId, q);
 
   const text = or(
     ilike(orders.email, likePattern(q)),
@@ -496,7 +512,7 @@ export async function resolveOrderAttention(
 }
 
 export async function getAdminOrder(orderId: string): Promise<AdminOrder | undefined> {
-  if (!UUID.test(orderId)) return undefined;
+  if (!isOrderId(orderId)) return undefined;
   return db.query.orders.findFirst({
     where: eq(orders.id, orderId),
     with: { items, user: { columns: { name: true, email: true } } },

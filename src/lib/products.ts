@@ -19,8 +19,9 @@ import {
 } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { writeWithEvent, type AdminEventInput } from "@/lib/admin-events";
-import { normalizeSearchQuery } from "@/lib/catalog";
+import { LOW_STOCK, normalizeSearchQuery } from "@/lib/catalog";
 import type { FieldChanges } from "@/lib/field-changes";
+import { likePattern } from "@/lib/sql";
 
 export type Product = Omit<
   typeof products.$inferSelect,
@@ -56,9 +57,6 @@ const selectProducts = (where?: SQL) =>
     .from(products)
     .innerJoin(categories, eq(products.categoryId, categories.id))
     .where(and(isLive, where));
-
-// `term` as an ILIKE pattern that matches it anywhere, wildcards escaped.
-export const likePattern = (term: string) => `%${term.replace(/[\\%_]/g, "\\$&")}%`;
 
 // Products flagged as new, most recently added first; id breaks ties between
 // rows inserted together.
@@ -267,8 +265,6 @@ const toAdminProduct = ({ product, category, held }: {
   held: number;
 }): AdminProduct => ({ ...product, category, held });
 
-// At or below this many units, a product shows under "Low stock".
-export const LOW_STOCK = 3;
 export const ADMIN_PRODUCTS_PER_PAGE = 50;
 
 export type AdminProductQuery = {

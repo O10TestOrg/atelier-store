@@ -1,3 +1,5 @@
+import type { FieldChanges } from "@/lib/field-changes";
+
 // What kind of change an admin event is, for the history's glyphs and the
 // activity filters. `adminEventKindWhere` in `src/lib/admin-events.ts` is the
 // same rules in SQL; keep the two in step.
@@ -14,11 +16,7 @@ export type AdminEventArea = (typeof adminEventAreas)[number];
 export const isAdminEventArea = (value: unknown): value is AdminEventArea =>
   adminEventAreas.includes(value as AdminEventArea);
 
-type EventShape = {
-  entity: string;
-  action: string;
-  changes: Record<string, { from: unknown; to: unknown }>;
-};
+type EventShape = { entity: string; action: string; changes: FieldChanges };
 
 export function adminEventKind({ entity, action, changes }: EventShape): AdminEventKind {
   const key = `${entity}.${action}`;

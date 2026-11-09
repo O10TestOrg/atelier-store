@@ -1,11 +1,10 @@
 "use server";
 
 import { addToCart } from "@/app/bag/actions";
-import { isValidSlug } from "@/lib/cart";
+import { MAX_WISHLIST, isValidSlug } from "@/lib/cookies";
 import { getCartProducts } from "@/lib/products";
 import { getCurrentUser } from "@/lib/session";
 import {
-  MAX_WISHLIST,
   addUserWishlist,
   clearUserWishlist,
   getUserWishlistSlugs,

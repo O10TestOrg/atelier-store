@@ -5,9 +5,16 @@ import { revalidateTag, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import type { CartActionResult } from "@/app/bag/actions";
+import { getAppUrl } from "@/lib/app-url";
 import { STORE_CURRENCY } from "@/lib/catalog";
-import { buildCart, readCart, reconcileCart, subtractLines, writeCart } from "@/lib/cart";
-import { consumeCheckoutAttempt } from "@/lib/checkout-limit";
+import {
+  buildCart,
+  orderLines,
+  readCart,
+  reconcileCart,
+  subtractLines,
+  writeCart,
+} from "@/lib/cart";
 import { cancelCheckout, lazyReleaseLapsedHolds } from "@/lib/order-sweep";
 import {
   StockUnavailableError,
@@ -22,9 +29,10 @@ import {
   setPendingCheckout,
 } from "@/lib/pending-checkout";
 import { getCheckoutProducts } from "@/lib/products";
+import { consumeCheckoutAttempt } from "@/lib/rate-limit";
 import { getCurrentUser } from "@/lib/session";
 import { readDeliveryCountry, shippingOptions } from "@/lib/shipping";
-import { getAppUrl, getStripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 // Stripe's minimum session lifetime is 30 minutes; a minute's margin covers
 // clock skew. Stock stays reserved for this long if the shopper walks away.
@@ -200,7 +208,7 @@ export async function settleCheckout() {
   if (checkout?.state !== "placed") redirect("/bag");
 
   const { order } = checkout;
-  const bought = order.items.map((item) => ({ slug: item.slug, quantity: item.quantity }));
+  const bought = orderLines(order);
   await writeCart(subtractLines(await readCart(), bought));
   await clearPendingCheckout();
   await setCheckoutReceipt(order.id);
