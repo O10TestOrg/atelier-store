@@ -104,8 +104,10 @@ export const campaigns: Campaign[] = [
 ];
 
 // Where the contact page, receipts and account pages send customers. Emails
-// sent by the store use it as their reply-to address.
-export const CLIENT_SERVICES_EMAIL = "clientservices@atelier.example";
+// sent by the store use it as their reply-to address. Read at build time on
+// the static contact page, so set it before building.
+export const CLIENT_SERVICES_EMAIL =
+  process.env.CLIENT_SERVICES_EMAIL || "clientservices@atelier.example";
 
 export const services = [
   {

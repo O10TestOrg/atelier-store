@@ -5,7 +5,7 @@ import { consumeRateLimit, ORDER_LOOKUP_LIMIT } from "@/lib/checkout-limit";
 import { composeEmail, trySendEmail } from "@/lib/email";
 import { createOrderLinkToken, ORDER_LINK_HOURS } from "@/lib/order-link";
 import { findOrdersByReference, orderReference } from "@/lib/orders";
-import { getAppUrl } from "@/lib/stripe";
+import { getAppUrl } from "@/lib/app-url";
 
 export type LookupState = {
   ok: boolean;

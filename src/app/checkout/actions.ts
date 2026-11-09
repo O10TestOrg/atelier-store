@@ -24,7 +24,8 @@ import {
 import { getCheckoutProducts } from "@/lib/products";
 import { getCurrentUser } from "@/lib/session";
 import { readDeliveryCountry, shippingOptions } from "@/lib/shipping";
-import { getAppUrl, getStripe } from "@/lib/stripe";
+import { getAppUrl } from "@/lib/app-url";
+import { getStripe } from "@/lib/stripe";
 
 // Stripe's minimum session lifetime is 30 minutes; a minute's margin covers
 // clock skew. Stock stays reserved for this long if the shopper walks away.

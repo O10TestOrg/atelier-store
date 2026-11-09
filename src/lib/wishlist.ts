@@ -59,7 +59,7 @@ export async function getUserWishlistSlugs(userId: string): Promise<string[]> {
     .select({ slug: products.slug })
     .from(wishlistItems)
     .innerJoin(products, eq(wishlistItems.productId, products.id))
-    .where(eq(wishlistItems.userId, userId))
+    .where(and(eq(wishlistItems.userId, userId), eq(products.status, "active")))
     .orderBy(desc(wishlistItems.createdAt), desc(products.id))
     .limit(MAX_WISHLIST);
   return rows.map((row) => row.slug);

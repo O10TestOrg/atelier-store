@@ -10,6 +10,12 @@ let client: Resend | null = null;
 
 export type Email = { to: string; subject: string; text: string; html: string };
 
+// False only in production without Resend configured, where mail is dropped.
+// Callers that use up something to send (restock alerts) check this first.
+export function canSendEmail() {
+  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM) || process.env.NODE_ENV !== "production";
+}
+
 export async function sendEmail({ to, subject, text, html }: Email) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;

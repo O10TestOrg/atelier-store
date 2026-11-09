@@ -7,8 +7,8 @@ import "server-only";
 import { and, isNotNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { restockAlerts } from "@/db/schema";
-import { composeEmail, trySendEmail } from "@/lib/email";
-import { getAppUrl } from "@/lib/stripe";
+import { canSendEmail, composeEmail, trySendEmail } from "@/lib/email";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function addRestockAlert(productId: number, email: string) {
   await db
@@ -25,6 +25,8 @@ export async function addRestockAlert(productId: number, email: string) {
 // at once never email the same person twice. A failed send isn't retried:
 // the shopper can ask again, and one missed alert beats a flood of repeats.
 export async function sendRestockAlerts(limit = 100) {
+  // Claiming marks alerts sent, so don't claim any that would be dropped.
+  if (!canSendEmail()) return 0;
   const result = await db.execute<{ email: string; name: string; slug: string }>(sql`
     with due as (
       select restock_alerts.id from restock_alerts

@@ -5,6 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { vercelAuthHosts } from "@/lib/app-url";
 import { WISHLIST_COOKIE } from "@/lib/cookies";
 import { composeEmail, sendEmail } from "@/lib/email";
 import { claimGuestOrders } from "@/lib/orders";
@@ -15,8 +16,19 @@ import {
   wishlistCookieOptions,
 } from "@/lib/wishlist";
 
-// BETTER_AUTH_SECRET and BETTER_AUTH_URL are read from the environment.
+// BETTER_AUTH_SECRET and BETTER_AUTH_URL are read from the environment. On
+// Vercel the base URL follows the request host, limited to this deployment's
+// own URLs, so previews can sign in and their emails link back to themselves.
+const allowedHosts = vercelAuthHosts();
+
 export const auth = betterAuth({
+  ...(allowedHosts && {
+    baseURL: {
+      allowedHosts,
+      protocol: "https",
+      fallback: process.env.BETTER_AUTH_URL ?? process.env.APP_URL,
+    },
+  }),
   database: drizzleAdapter(db, { provider: "pg", schema }),
   emailAndPassword: {
     enabled: true,
@@ -56,8 +68,8 @@ export const auth = betterAuth({
     changeEmail: { enabled: true },
     deleteUser: {
       enabled: true,
-      // Staff accounts are removed by another admin in the database, so the
-      // store can't lose its last admin from a settings page.
+      // Admins are demoted on /admin/customers (never the last one) before
+      // their account can go, so the store can't lose its last admin here.
       beforeDelete: async (user) => {
         if ((user as { role?: string }).role === "admin") {
           throw new APIError("BAD_REQUEST", { message: "Admin accounts can't be deleted here." });
@@ -66,7 +78,8 @@ export const auth = betterAuth({
     },
     additionalFields: {
       // `input: false` keeps clients from choosing their own role at sign-up.
-      // Promote admins with `pnpm db:make-admin <email>`.
+      // Admins grant it on /admin/customers; `pnpm db:make-admin <email>`
+      // bootstraps the first one.
       role: {
         type: ["customer", "admin"],
         required: false,
