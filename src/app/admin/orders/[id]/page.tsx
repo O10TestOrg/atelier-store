@@ -13,6 +13,7 @@ import { getEntityHistory } from "@/lib/admin-events";
 import { getAdminOrder, orderReference } from "@/lib/orders";
 import { requireAdmin } from "@/lib/session";
 import { stripePaymentUrl } from "@/lib/stripe";
+import { ArrowLeftIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Order details",
@@ -29,7 +30,7 @@ export default function AdminOrderPage({ params }: PageProps<"/admin/orders/[id]
   return (
     <>
       <Link href="/admin/orders" className="link-quiet text-body-sm text-muted">
-        <span aria-hidden="true">←</span> All orders
+        <ArrowLeftIcon /> All orders
       </Link>
       <Suspense fallback={<div aria-hidden="true" className="mt-8 h-96 animate-pulse bg-surface" />}>
         <OrderDetail params={params} />

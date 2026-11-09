@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRightIcon } from "@/components/icons";
 import type { AdminEvent } from "@/lib/admin-events";
 import { formatPrice } from "@/lib/catalog";
 
@@ -137,9 +138,9 @@ export function HistoryList({ events, categoryNames, showEntity = false }: Props
                         formatValue(field, field === "note" ? to : from, categoryNames)
                       ) : (
                         <>
-                          <span className="text-muted">{formatValue(field, from, categoryNames)}</span>
-                          <span aria-hidden="true"> → </span>
-                          <span className="sr-only"> changed to </span>
+                          <span className="text-muted">{formatValue(field, from, categoryNames)}</span>{" "}
+                          <ArrowRightIcon className="text-muted" />
+                          <span className="sr-only"> changed to </span>{" "}
                           {formatValue(field, to, categoryNames)}
                         </>
                       )}

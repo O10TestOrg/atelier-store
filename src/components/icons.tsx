@@ -133,3 +133,35 @@ export function InfoIcon(props: IconProps) {
     </Icon>
   );
 }
+
+// Text arrows sized to the surrounding type and centred on its x-height, in
+// place of the → and ← glyphs, which Geist sets low on the line.
+function TextArrow({ className = "", children, ...props }: IconProps) {
+  return (
+    <Icon
+      width="1em"
+      height="1em"
+      strokeWidth={1.5}
+      className={`shrink-0 align-[-0.15em] ${className}`}
+      {...props}
+    >
+      {children}
+    </Icon>
+  );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <TextArrow {...props}>
+      <path d="M5 12h14M13.5 6.5 19 12l-5.5 5.5" />
+    </TextArrow>
+  );
+}
+
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <TextArrow {...props}>
+      <path d="M19 12H5M10.5 6.5 5 12l5.5 5.5" />
+    </TextArrow>
+  );
+}

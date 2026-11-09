@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { requireUser } from "@/lib/session";
+import { ArrowRightIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "My account",
@@ -71,7 +72,7 @@ function Tile({ href, title, description }: { href: string; title: string; descr
         className="group flex h-full flex-col p-6 transition-colors hover:bg-surface md:p-8"
       >
         <h2 className="text-body-sm">
-          {title} <span aria-hidden="true" className="inline-block transition-transform group-hover:translate-x-1">→</span>
+          {title} <ArrowRightIcon className="transition-transform group-hover:translate-x-1" />
         </h2>
         <p className="mt-2 text-meta">{description}</p>
       </Link>
