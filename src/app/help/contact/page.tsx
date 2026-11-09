@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CLIENT_SERVICES_EMAIL } from "@/lib/catalog";
+import { CLIENT_SERVICES_EMAIL } from "@/features/catalog/catalog";
 
 export const metadata: Metadata = {
   title: "Contact client services",

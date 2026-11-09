@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { updateStock } from "@/app/admin/products/actions";
+import { updateStock } from "@/features/admin/actions/products";
 import {
   AdminPager,
   AdminSearch,
@@ -9,18 +9,18 @@ import {
   pageCount,
   pageParam,
   param,
-} from "@/components/admin/list-controls";
-import { ProductStatus } from "@/components/admin/product-status";
-import { StockForm } from "@/components/admin/stock-form";
-import { ProductThumb } from "@/components/product-thumb";
+} from "@/features/admin/components/list-controls";
+import { ProductStatus } from "@/features/admin/components/product-status";
+import { StockForm } from "@/features/admin/components/stock-form";
+import { ProductThumb } from "@/features/catalog/product-thumb";
 import { SignalMessage, StatusDot } from "@/components/signal";
 import { productStatuses, type ProductStatus as Status } from "@/db/schema";
-import { LOW_STOCK, formatPrice } from "@/lib/catalog";
+import { LOW_STOCK, formatPrice } from "@/features/catalog/catalog";
 import {
   ADMIN_PRODUCTS_PER_PAGE,
   getAdminCategories,
   getAdminProducts,
-} from "@/lib/products";
+} from "@/features/catalog/products";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {

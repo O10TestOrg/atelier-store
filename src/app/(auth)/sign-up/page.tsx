@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AuthForm } from "@/components/auth-form";
-import { AuthSwitchLink, AuthSwitchLinkFallback } from "@/components/auth-switch-link";
-import { RedirectIfSignedIn } from "../redirect-if-signed-in";
+import { AuthForm } from "@/features/account/auth-form";
+import { AuthSwitchLink, AuthSwitchLinkFallback } from "@/features/account/auth-switch-link";
+import { RedirectIfSignedIn } from "@/features/account/redirect-if-signed-in";
 
 export const metadata: Metadata = {
   title: "Create an account",

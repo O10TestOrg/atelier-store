@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { OrderLookupForm } from "@/components/order-lookup-form";
+import { OrderLookupForm } from "@/features/orders/order-lookup-form";
 
 export const metadata: Metadata = {
   title: "Find your order",

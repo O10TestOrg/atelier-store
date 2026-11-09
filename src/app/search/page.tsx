@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ProductCard } from "@/components/product-card";
-import { SearchForm, SearchFormFallback } from "@/components/search-form";
-import { SortableProductGrid } from "@/components/sortable-product-grid";
-import { categoryHref, normalizeSearchQuery } from "@/lib/catalog";
-import { getAllProducts, getCategories, searchProducts } from "@/lib/products";
+import { ProductCard } from "@/features/catalog/product-card";
+import { SearchForm, SearchFormFallback } from "@/features/catalog/search-form";
+import { SortableProductGrid } from "@/features/catalog/sortable-product-grid";
+import { categoryHref, normalizeSearchQuery } from "@/features/catalog/catalog";
+import { getAllProducts, getCategories, searchProducts } from "@/features/catalog/products";
 
 export const metadata: Metadata = {
   title: "Shop all",

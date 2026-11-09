@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ProductCard } from "@/components/product-card";
-import { campaigns, categoryHref, hero, services, story } from "@/lib/catalog";
-import { getCategoryTiles, getNewArrivals } from "@/lib/products";
+import { ProductCard } from "@/features/catalog/product-card";
+import { campaigns, categoryHref, hero, services, story } from "@/features/catalog/catalog";
+import { getCategoryTiles, getNewArrivals } from "@/features/catalog/products";
 
 export default async function Home() {
   const [products, tiles] = await Promise.all([getNewArrivals(8), getCategoryTiles()]);

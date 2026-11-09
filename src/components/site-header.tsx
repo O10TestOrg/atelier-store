@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { AccountLink } from "@/components/account-link";
-import { BagCount } from "@/components/bag-count";
+import { AccountLink } from "@/features/account/account-link";
+import { BagCount } from "@/features/cart/bag-count";
 import { HeaderMenu } from "@/components/header-menu";
-import { SearchLink } from "@/components/search-link";
-import { WishlistCount, WishlistHeartIcon } from "@/components/wishlist-state";
+import { SearchLink } from "@/features/catalog/search-link";
+import { WishlistCount, WishlistHeartIcon } from "@/features/wishlist/wishlist-state";
 import {
   BagIcon,
   ChevronDownIcon,
@@ -12,8 +12,8 @@ import {
   SearchIcon,
   UserIcon,
 } from "@/components/icons";
-import { categoryHref } from "@/lib/catalog";
-import { getCategories } from "@/lib/products";
+import { categoryHref } from "@/features/catalog/catalog";
+import { getCategories } from "@/features/catalog/products";
 
 // "New in" is set apart as a pill so it reads as the season's entry point.
 const newInPill =

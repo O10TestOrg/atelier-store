@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
-import { HistoryList, kindStyles } from "@/components/admin/history-list";
+import { HistoryList, kindStyles } from "@/features/admin/components/history-list";
 import {
   AdminPager,
   listHref,
   pageCount,
   pageParam,
   param,
-} from "@/components/admin/list-controls";
+} from "@/features/admin/components/list-controls";
 import {
   adminEventAreas,
   adminEventKinds,
@@ -17,8 +17,8 @@ import {
   type AdminEventArea,
   type AdminEventKind,
 } from "@/lib/admin-event-kinds";
-import { ADMIN_EVENTS_PER_PAGE, getAdminEvents } from "@/lib/admin-events";
-import { getAdminCategories } from "@/lib/products";
+import { ADMIN_EVENTS_PER_PAGE, getAdminEvents } from "@/features/admin/admin-events";
+import { getAdminCategories } from "@/features/catalog/products";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {

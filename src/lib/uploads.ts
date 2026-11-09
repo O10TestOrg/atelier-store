@@ -2,7 +2,7 @@
 // `/api/admin/uploads` only hands out short-lived upload tokens. Without
 // `BLOB_READ_WRITE_TOKEN` uploads are off and product images must be
 // Unsplash URLs.
-// The type and size limits live in src/lib/product-form.ts, so the client
+// The type and size limits live in src/features/admin/product-form.ts, so the client
 // field can share them.
 import "server-only";
 

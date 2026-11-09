@@ -6,8 +6,8 @@ import {
   ChangeNameForm,
   ChangePasswordForm,
   DeleteAccountForm,
-} from "@/components/account-details-forms";
-import { EmailVerificationNotice } from "@/components/email-verification-notice";
+} from "@/features/account/account-details-forms";
+import { EmailVerificationNotice } from "@/features/account/email-verification-notice";
 import { Notice } from "@/components/signal";
 import { formatMonthYear } from "@/lib/dates";
 import { requireUser } from "@/lib/session";

@@ -179,7 +179,7 @@ export const rateLimit = pgTable("rate_limit", {
 // One order per Stripe Checkout Session. Created `pending` at checkout start,
 // in the same batch that reserves its stock; only Stripe (webhook or a
 // server-side session read) moves it on. Reads and writes go through
-// `src/lib/orders.ts`.
+// `src/features/orders/orders.ts`.
 
 export const orderStatuses = [
   "pending",
@@ -275,7 +275,7 @@ export const orderItems = pgTable(
 );
 
 // Ledger of Stripe webhook events already handled, so redeliveries are skipped.
-// Pruned after 30 days by the hold sweep (`src/lib/order-sweep.ts`); Stripe
+// Pruned after 30 days by the hold sweep (`src/features/checkout/order-sweep.ts`); Stripe
 // stops retrying an event after three.
 export const stripeEvents = pgTable(
   "stripe_events",
@@ -302,7 +302,7 @@ export const checkoutRateLimits = pgTable("checkout_rate_limits", {
 // --- Admin history -----------------------------------------------------------
 // Append-only record of admin changes: who, what, and the values before and
 // after. Each row is written in the same statement as the change it records
-// (`src/lib/admin-events.ts`), so the history can't miss one. No foreign keys:
+// (`src/features/admin/admin-events.ts`), so the history can't miss one. No foreign keys:
 // it outlives deleted products, categories and admins.
 
 export const adminEvents = pgTable(
@@ -333,7 +333,7 @@ export const adminEvents = pgTable(
 
 // --- Wishlist ----------------------------------------------------------------
 // Signed-in users' saved pieces. Guests keep theirs in the `wishlist` cookie
-// until they sign in. Reads and writes go through `src/lib/wishlist.ts`.
+// until they sign in. Reads and writes go through `src/features/wishlist/wishlist.ts`.
 
 export const wishlistItems = pgTable(
   "wishlist_items",
@@ -354,7 +354,7 @@ export const wishlistItems = pgTable(
 // --- Back-in-stock alerts ----------------------------------------------------
 // One row per email per sold-out product, asked for on the product page. The
 // email goes once the product has stock again; `notified_at` marks it sent.
-// Written through `src/lib/restock-alerts.ts`; sent rows are pruned after 30 days.
+// Written through `src/features/restock-alerts/restock-alerts.ts`; sent rows are pruned after 30 days.
 
 export const restockAlerts = pgTable(
   "restock_alerts",

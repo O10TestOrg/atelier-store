@@ -5,10 +5,10 @@ import {
   createCategory,
   removeCategory,
   updateCategoryName,
-} from "@/app/admin/categories/actions";
-import { CategoryRow, CreateCategoryForm } from "@/components/admin/category-forms";
-import { categoryHref } from "@/lib/catalog";
-import { getAdminCategories } from "@/lib/products";
+} from "@/features/admin/actions/categories";
+import { CategoryRow, CreateCategoryForm } from "@/features/admin/components/category-forms";
+import { categoryHref } from "@/features/catalog/catalog";
+import { getAdminCategories } from "@/features/catalog/products";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {

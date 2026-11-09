@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ANNOUNCER_ID, PAGE_HEADING_ID } from "@/components/focus-after-removal";
-import { ProductCard } from "@/components/product-card";
-import { ClearWishlistButton, WishlistItemControls } from "@/components/wishlist-item-controls";
-import { WishlistSync } from "@/components/wishlist-state";
-import { getStockState } from "@/lib/catalog";
-import { getCartProducts, type Product } from "@/lib/products";
+import { ProductCard } from "@/features/catalog/product-card";
+import { ClearWishlistButton, WishlistItemControls } from "@/features/wishlist/wishlist-item-controls";
+import { WishlistSync } from "@/features/wishlist/wishlist-state";
+import { getStockState } from "@/features/catalog/catalog";
+import { getCartProducts, type Product } from "@/features/catalog/products";
 import { getCurrentUser } from "@/lib/session";
-import { getUserWishlistSlugs, readWishlistCookie } from "@/lib/wishlist";
+import { getUserWishlistSlugs, readWishlistCookie } from "@/features/wishlist/wishlist";
 
 export const metadata: Metadata = {
   title: "Wishlist",

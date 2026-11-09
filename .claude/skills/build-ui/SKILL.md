@@ -3,7 +3,7 @@ name: build-ui
 description: Build or update customer-facing ecommerce UI using the existing design system, components, product patterns and responsive conventions. Use when creating or significantly changing storefront pages, sections or customer-facing components. Not for internal admin screens under /admin (tables, forms, stock tools); follow the Admin section of CLAUDE.md for those.
 ---
 
-Scope: this skill is written for the storefront. Don't force it onto internal admin workflows, which have different goals (dense data, fast editing) and their own patterns in `src/components/admin/`.
+Scope: this skill is written for the storefront. Don't force it onto internal admin workflows, which have different goals (dense data, fast editing) and their own patterns in `src/features/admin/components/`.
 
 Build or update the following UI:
 

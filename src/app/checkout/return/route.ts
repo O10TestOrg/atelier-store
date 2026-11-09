@@ -1,11 +1,11 @@
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after, type NextRequest } from "next/server";
-import { writeCart } from "@/lib/cart";
+import { writeCart } from "@/features/cart/cart";
 import { isCheckoutSessionId } from "@/lib/ids";
-import { applyCheckoutSession, findOrderForSession, releaseSessionOrder } from "@/lib/orders";
-import { clearPendingCheckout, setCheckoutReceipt } from "@/lib/pending-checkout";
-import { sendRestockAlerts } from "@/lib/restock-alerts";
+import { applyCheckoutSession, findOrderForSession, releaseSessionOrder } from "@/features/orders/orders";
+import { clearPendingCheckout, setCheckoutReceipt } from "@/features/checkout/pending-checkout";
+import { sendRestockAlerts } from "@/features/restock-alerts/restock-alerts";
 import { getStripe } from "@/lib/stripe";
 
 // Stripe's success_url. A Route Handler rather than a page so it can clear the

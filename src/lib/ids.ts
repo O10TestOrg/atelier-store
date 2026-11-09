@@ -1,6 +1,6 @@
 // Checks for ids that arrive from URLs, forms and Stripe, before they reach a
 // query. Product and category ids are integers: see `isValidId` in
-// src/lib/product-form.ts.
+// src/features/admin/product-form.ts.
 
 const ORDER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CHECKOUT_SESSION_ID = /^cs_[A-Za-z0-9_]{1,250}$/;

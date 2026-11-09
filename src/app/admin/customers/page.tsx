@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { changeRole } from "@/app/admin/customers/actions";
-import { ConfirmAction } from "@/components/admin/confirm-action";
+import { changeRole } from "@/features/admin/actions/customers";
+import { ConfirmAction } from "@/features/admin/components/confirm-action";
 import {
   AdminPager,
   AdminSearch,
@@ -10,9 +10,9 @@ import {
   pageCount,
   pageParam,
   param,
-} from "@/components/admin/list-controls";
+} from "@/features/admin/components/list-controls";
 import { SignalIcon } from "@/components/signal";
-import { ADMIN_CUSTOMERS_PER_PAGE, getAdminCustomers, type Role } from "@/lib/customers";
+import { ADMIN_CUSTOMERS_PER_PAGE, getAdminCustomers, type Role } from "@/features/admin/customers";
 import { formatShortDate } from "@/lib/dates";
 import { requireAdmin } from "@/lib/session";
 

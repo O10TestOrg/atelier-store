@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { AccountNav, AccountNavItem } from "@/components/account-nav";
+import { AccountNav, AccountNavItem } from "@/features/account/account-nav";
 import { getCurrentUser } from "@/lib/session";
 
 // The shell (breadcrumb, nav) is static. Each page checks the session itself

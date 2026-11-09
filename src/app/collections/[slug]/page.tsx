@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ProductCard } from "@/components/product-card";
-import { SortableProductGrid } from "@/components/sortable-product-grid";
-import { categoryHref, services } from "@/lib/catalog";
+import { ProductCard } from "@/features/catalog/product-card";
+import { SortableProductGrid } from "@/features/catalog/sortable-product-grid";
+import { categoryHref, services } from "@/features/catalog/catalog";
 import {
   getCategories,
   getCategory,
   getCategoryProducts,
-} from "@/lib/products";
+} from "@/features/catalog/products";
 
 // Render unlisted slugs fully before responding, so notFound() sends a real
 // 404 instead of a 200 from the streamed fallback shell.

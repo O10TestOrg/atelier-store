@@ -5,16 +5,16 @@ import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/account-fields";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/features/account/account-fields";
 import { vercelAuthHosts } from "@/lib/app-url";
 import { WISHLIST_COOKIE, parseWishlist } from "@/lib/cookies";
 import { composeEmail, sendEmail } from "@/lib/email";
-import { claimGuestOrders } from "@/lib/orders";
+import { claimGuestOrders } from "@/features/orders/orders";
 import {
   addUserWishlist,
   getUserWishlistSlugs,
   wishlistCookieOptions,
-} from "@/lib/wishlist";
+} from "@/features/wishlist/wishlist";
 
 // BETTER_AUTH_SECRET and BETTER_AUTH_URL are read from the environment. On
 // Vercel the base URL follows the request host, limited to this deployment's

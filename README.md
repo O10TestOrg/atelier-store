@@ -76,7 +76,7 @@ Call `GET /api/cron/release-holds` every 5–15 minutes with `Authorization: Bea
 | `pnpm dev` / `pnpm build` / `pnpm start` | Run, build or serve the app |
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | TypeScript, no database needed |
-| `pnpm test` | Unit tests (`node:test`) for the pure helpers, in `src/lib/*.test.ts` |
+| `pnpm test` | Unit tests (`node:test`) for the pure helpers, next to the code as `src/**/*.test.ts` |
 | `pnpm db:generate` / `pnpm db:migrate` | Create and apply migrations from `src/db/schema.ts` |
 | `pnpm db:push` | Sync the schema straight to the database (quick dev only) |
 | `pnpm db:studio` | Browse the database |
