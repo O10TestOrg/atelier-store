@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { EmailVerificationNotice } from "@/features/account/email-verification-notice";
 import { requireUser } from "@/lib/session";
 import { ArrowRightIcon } from "@/components/icons";
 

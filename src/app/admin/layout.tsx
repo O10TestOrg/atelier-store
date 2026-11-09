@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminNav } from "@/features/admin/components/admin-nav";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s | Admin | Atelier" },

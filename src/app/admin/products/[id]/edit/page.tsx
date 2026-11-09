@@ -7,20 +7,20 @@ import {
   deleteProduct,
   updateProduct,
   updateStock,
-} from "@/app/admin/products/actions";
-import { ConfirmAction } from "@/components/admin/confirm-action";
-import { HistoryList } from "@/components/admin/history-list";
-import { ProductForm } from "@/components/admin/product-form";
-import { ProductStatus } from "@/components/admin/product-status";
-import { StockForm } from "@/components/admin/stock-form";
-import { getEntityHistory } from "@/lib/admin-events";
-import { isValidId, parseInteger } from "@/lib/product-form";
+} from "@/features/admin/actions/products";
+import { ConfirmAction } from "@/features/admin/components/confirm-action";
+import { HistoryList } from "@/features/admin/components/history-list";
+import { ProductForm } from "@/features/admin/components/product-form";
+import { ProductStatus } from "@/features/admin/components/product-status";
+import { StockForm } from "@/features/admin/components/stock-form";
+import { getEntityHistory } from "@/features/admin/admin-events";
+import { isValidId, parseInteger } from "@/features/admin/product-form";
 import {
   getAdminCategories,
   getAdminProduct,
   productHasOrders,
   type AdminProduct,
-} from "@/lib/products";
+} from "@/features/catalog/products";
 import { requireAdmin } from "@/lib/session";
 import { getUploadHost } from "@/lib/uploads";
 import { SignalMessage } from "@/components/signal";

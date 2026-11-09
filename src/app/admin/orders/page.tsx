@@ -8,11 +8,11 @@ import {
   pageCount,
   pageParam,
   param,
-} from "@/components/admin/list-controls";
-import { OrderStatus } from "@/components/order-status";
-import { OrderItemThumbs } from "@/components/product-thumb";
+} from "@/features/admin/components/list-controls";
+import { OrderStatus } from "@/features/orders/order-status";
+import { OrderItemThumbs } from "@/features/catalog/product-thumb";
 import { Notice, SignalIcon } from "@/components/signal";
-import { formatPrice } from "@/lib/catalog";
+import { formatPrice } from "@/features/catalog/catalog";
 import { formatShortDateTime } from "@/lib/dates";
 import {
   ADMIN_ORDERS_PER_PAGE,
@@ -21,7 +21,7 @@ import {
   isAdminOrderFilter,
   orderReference,
   type AdminOrderFilter,
-} from "@/lib/orders";
+} from "@/features/orders/orders";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {

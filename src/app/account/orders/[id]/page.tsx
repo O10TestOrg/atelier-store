@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
-import { OrderAddress } from "@/components/order-address";
-import { OrderStatus } from "@/components/order-status";
-import { OrderSummary } from "@/components/order-summary";
+import { OrderAddress } from "@/features/orders/order-address";
+import { OrderStatus } from "@/features/orders/order-status";
+import { OrderSummary } from "@/features/orders/order-summary";
 import { formatDate } from "@/lib/dates";
-import { getUserOrder, orderReference, type Order } from "@/lib/orders";
+import { getUserOrder, orderReference, type Order } from "@/features/orders/orders";
 import { requireUser } from "@/lib/session";
 import { ArrowLeftIcon } from "@/components/icons";
 

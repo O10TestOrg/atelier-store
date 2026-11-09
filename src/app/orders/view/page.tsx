@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
-import { OrderAddress } from "@/components/order-address";
-import { OrderStatus } from "@/components/order-status";
-import { OrderSummary } from "@/components/order-summary";
+import { OrderAddress } from "@/features/orders/order-address";
+import { OrderStatus } from "@/features/orders/order-status";
+import { OrderSummary } from "@/features/orders/order-summary";
 import { formatDate } from "@/lib/dates";
-import { readOrderLinkToken } from "@/lib/order-link";
-import { getLinkedOrder, orderReference } from "@/lib/orders";
+import { readOrderLinkToken } from "@/features/orders/order-link";
+import { getLinkedOrder, orderReference } from "@/features/orders/orders";
 
 export const metadata: Metadata = {
   title: "Your order",

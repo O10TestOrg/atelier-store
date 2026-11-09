@@ -2,7 +2,7 @@
 // Run with `pnpm db:seed`.
 import { loadEnvConfig } from "@next/env";
 import { sql } from "drizzle-orm";
-import { unsplash } from "../lib/catalog";
+import { unsplash } from "../features/catalog/catalog";
 import { categories, products } from "./schema";
 
 loadEnvConfig(process.cwd());

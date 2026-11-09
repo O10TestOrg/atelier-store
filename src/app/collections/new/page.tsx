@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ProductCard } from "@/components/product-card";
-import { services } from "@/lib/catalog";
-import { getNewArrivals } from "@/lib/products";
+import { ProductCard } from "@/features/catalog/product-card";
+import { services } from "@/features/catalog/catalog";
+import { getNewArrivals } from "@/features/catalog/products";
 
 export const metadata: Metadata = {
   title: "New arrivals",

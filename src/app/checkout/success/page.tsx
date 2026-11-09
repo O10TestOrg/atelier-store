@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { OrderAddress } from "@/components/order-address";
-import { OrderStatus } from "@/components/order-status";
-import { OrderSummary } from "@/components/order-summary";
+import { OrderAddress } from "@/features/orders/order-address";
+import { OrderStatus } from "@/features/orders/order-status";
+import { OrderSummary } from "@/features/orders/order-summary";
 import { isCheckoutSessionId } from "@/lib/ids";
-import { getOrderBySessionId, orderReference, type Order } from "@/lib/orders";
-import { readCheckoutReceipt } from "@/lib/pending-checkout";
+import { getOrderBySessionId, orderReference, type Order } from "@/features/orders/orders";
+import { readCheckoutReceipt } from "@/features/checkout/pending-checkout";
 import { getCurrentUser } from "@/lib/session";
 
 export const metadata: Metadata = {

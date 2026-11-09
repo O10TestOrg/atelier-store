@@ -1,7 +1,7 @@
 import type { FieldChanges } from "@/lib/field-changes";
 
 // What kind of change an admin event is, for the history's glyphs and the
-// activity filters. `adminEventKindWhere` in `src/lib/admin-events.ts` is the
+// activity filters. `adminEventKindWhere` in `src/features/admin/admin-events.ts` is the
 // same rules in SQL; keep the two in step.
 
 export const adminEventKinds = ["add", "publish", "edit", "archive", "delete"] as const;

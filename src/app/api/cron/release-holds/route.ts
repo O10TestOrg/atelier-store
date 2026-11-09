@@ -1,8 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
-import { scheduledSweep } from "@/lib/order-sweep";
+import { scheduledSweep } from "@/features/checkout/order-sweep";
 
-// Scheduled sweep of lapsed stock holds (see `src/lib/order-sweep.ts`). Call it
+// Scheduled sweep of lapsed stock holds (see `src/features/checkout/order-sweep.ts`). Call it
 // every 5–15 minutes with `Authorization: Bearer $CRON_SECRET`; Vercel Cron
 // sends that header itself. Without CRON_SECRET the route stays closed.
 export async function GET(request: Request) {

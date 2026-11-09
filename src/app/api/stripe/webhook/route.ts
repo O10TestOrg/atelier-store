@@ -6,8 +6,8 @@ import {
   isEventProcessed,
   markEventProcessed,
   releaseSessionOrder,
-} from "@/lib/orders";
-import { sendRestockAlerts } from "@/lib/restock-alerts";
+} from "@/features/orders/orders";
+import { sendRestockAlerts } from "@/features/restock-alerts/restock-alerts";
 import { getStripe, getWebhookSecret } from "@/lib/stripe";
 
 // Stripe → order status. The signature is the only thing that makes a request

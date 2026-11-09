@@ -3,25 +3,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { AddToBagButton } from "@/components/add-to-bag-button";
+import { AddToBagButton } from "@/features/cart/add-to-bag-button";
 import { PlusIcon } from "@/components/icons";
-import { ProductCard } from "@/components/product-card";
-import { RestockAlertForm } from "@/components/restock-alert-form";
-import { StockStatus } from "@/components/stock-status";
-import { WishlistButton } from "@/components/wishlist-button";
+import { ProductCard } from "@/features/catalog/product-card";
+import { RestockAlertForm } from "@/features/restock-alerts/restock-alert-form";
+import { StockStatus } from "@/features/catalog/stock-status";
+import { WishlistButton } from "@/features/wishlist/wishlist-button";
 import {
   categoryHref,
   formatPrice,
   getStockState,
   services,
-} from "@/lib/catalog";
+} from "@/features/catalog/catalog";
 import {
   getProduct,
   getProductSlugs,
   getRelatedProducts,
   type Product,
-} from "@/lib/products";
-import { formatDays, RATES, type Zone } from "@/lib/shipping";
+} from "@/features/catalog/products";
+import { formatDays, RATES, type Zone } from "@/features/cart/shipping";
 
 const deliveryZones: { zone: Zone; label: string }[] = [
   { zone: "uk", label: "UK" },

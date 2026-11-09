@@ -4,7 +4,7 @@
 // so builds work without the keys.
 import "server-only";
 import { Resend } from "resend";
-import { CLIENT_SERVICES_EMAIL } from "@/lib/catalog";
+import { CLIENT_SERVICES_EMAIL } from "@/features/catalog/catalog";
 
 let client: Resend | null = null;
 

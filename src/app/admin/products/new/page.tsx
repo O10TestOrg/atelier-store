@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { createProduct } from "@/app/admin/products/actions";
-import { ProductForm } from "@/components/admin/product-form";
-import { getAdminCategories } from "@/lib/products";
+import { createProduct } from "@/features/admin/actions/products";
+import { ProductForm } from "@/features/admin/components/product-form";
+import { getAdminCategories } from "@/features/catalog/products";
 import { requireAdmin } from "@/lib/session";
 import { getUploadHost } from "@/lib/uploads";
 import { ArrowLeftIcon } from "@/components/icons";

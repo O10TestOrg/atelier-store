@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { OrderStatus } from "@/components/order-status";
-import { OrderItemThumbs } from "@/components/product-thumb";
-import { formatPrice } from "@/lib/catalog";
+import { OrderStatus } from "@/features/orders/order-status";
+import { OrderItemThumbs } from "@/features/catalog/product-thumb";
+import { formatPrice } from "@/features/catalog/catalog";
 import { formatDate } from "@/lib/dates";
-import { getUserOrders, orderReference } from "@/lib/orders";
+import { getUserOrders, orderReference } from "@/features/orders/orders";
 import { requireUser } from "@/lib/session";
 import { ArrowRightIcon } from "@/components/icons";
 

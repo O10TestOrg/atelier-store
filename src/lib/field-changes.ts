@@ -1,4 +1,4 @@
-// Before/after diffs for the admin history (`src/lib/admin-events.ts`). Pure,
+// Before/after diffs for the admin history (`src/features/admin/admin-events.ts`). Pure,
 // so it can be tested without a database.
 
 export type FieldChanges = Record<string, { from: unknown; to: unknown }>;
