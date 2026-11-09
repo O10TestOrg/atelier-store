@@ -105,8 +105,8 @@ export default async function CollectionPage({
             <p className="text-muted">
               New pieces for this collection are on their way. Check back soon.
             </p>
-            <Link href="/collections/new" className="btn btn-primary mt-8">
-              Shop new arrivals
+            <Link href="/search" className="btn btn-primary mt-8">
+              Shop all
             </Link>
           </div>
         )}

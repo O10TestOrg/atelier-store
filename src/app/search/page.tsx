@@ -3,12 +3,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ProductCard } from "@/components/product-card";
 import { SearchForm, SearchFormFallback } from "@/components/search-form";
+import { SortableProductGrid } from "@/components/sortable-product-grid";
 import { categoryHref, normalizeSearchQuery } from "@/lib/catalog";
-import { getCategories, searchProducts } from "@/lib/products";
+import { getAllProducts, getCategories, searchProducts } from "@/lib/products";
 
 export const metadata: Metadata = {
-  title: "Search",
-  description: "Search Atelier's leather goods, ready-to-wear and accessories.",
+  title: "Shop all",
+  description: "Browse and search Atelier's leather goods, clothing and accessories.",
   robots: { index: false },
 };
 
@@ -24,14 +25,14 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-foreground">
-            Search
+            Shop all
           </li>
         </ol>
       </nav>
 
       <header className="container-prose pt-6 pb-10 text-center md:pt-8 md:pb-12">
-        <p className="text-eyebrow text-muted">Search</p>
-        <h1 className="mt-4 text-display">Find a piece</h1>
+        <p className="text-eyebrow text-muted">The collection</p>
+        <h1 className="mt-4 text-display">Shop all</h1>
         <div className="mt-10 text-left">
           <Suspense fallback={<SearchFormFallback />}>
             <SearchForm />
@@ -41,7 +42,7 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
 
       <section className="container-page pb-section" aria-labelledby="results-title">
         <h2 id="results-title" className="sr-only">
-          Search results
+          Products
         </h2>
         <Suspense fallback={<ResultsSkeleton />}>
           <SearchResults searchParams={searchParams} />
@@ -58,7 +59,7 @@ async function SearchResults({
 }) {
   const query = normalizeSearchQuery((await searchParams).q);
   const [products, categories] = await Promise.all([
-    searchProducts(query),
+    query ? searchProducts(query) : getAllProducts(),
     getCategories(),
   ]);
 
@@ -76,12 +77,43 @@ async function SearchResults({
     </nav>
   );
 
+  // Nothing typed yet: the whole catalogue, sortable like a collection page.
   if (!query) {
+    if (products.length === 0) {
+      return (
+        <div className="border-t pt-section text-center">
+          <p className="text-muted">New pieces are on their way. Check back soon.</p>
+          {browse}
+        </div>
+      );
+    }
     return (
-      <div className="border-t pt-section text-center">
-        <p className="text-muted">Search by name, colour, material or collection.</p>
-        {browse}
-      </div>
+      <>
+        <div className="mb-6 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-end sm:justify-between">
+          <nav aria-label="Collections" className="-mx-gutter overflow-x-auto px-gutter [scrollbar-width:none] sm:mx-0 sm:px-0">
+            <ul className="flex gap-6 text-body-sm whitespace-nowrap">
+              {categories.map((category) => (
+                <li key={category.slug}>
+                  <Link href={categoryHref(category.slug)} className="link-quiet">
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <p className="shrink-0 text-meta">
+            {products.length} {products.length === 1 ? "piece" : "pieces"}
+          </p>
+        </div>
+        <SortableProductGrid
+          items={products.map((product) => ({
+            key: product.slug,
+            price: product.price,
+            isNew: product.isNew,
+            card: <ProductCard product={product} />,
+          }))}
+        />
+      </>
     );
   }
 
@@ -109,8 +141,8 @@ async function SearchResults({
             browse a collection.
           </p>
           {browse}
-          <Link href="/collections/new" className="btn btn-primary mt-8">
-            Shop new arrivals
+          <Link href="/search" className="btn btn-primary mt-8">
+            Clear search
           </Link>
         </div>
       )}

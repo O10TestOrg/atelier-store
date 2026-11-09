@@ -33,7 +33,7 @@ export default async function Home() {
             {hero.description}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/collections/new" className="btn btn-primary">
+            <Link href="/search" className="btn btn-primary">
               Discover the collection
             </Link>
           </div>

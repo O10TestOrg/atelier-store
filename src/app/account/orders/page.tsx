@@ -43,8 +43,8 @@ async function OrderList() {
           Orders you place while signed in will appear here, along with guest orders placed with
           your email address once it’s confirmed.
         </p>
-        <Link href="/collections/new" className="btn btn-primary mt-8">
-          Shop new arrivals
+        <Link href="/search" className="btn btn-primary mt-8">
+          Shop all
         </Link>
       </div>
     );

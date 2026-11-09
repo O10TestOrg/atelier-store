@@ -10,7 +10,7 @@ loadEnvConfig(process.cwd());
 const categoryData = [
   { slug: "bags", name: "Bags" },
   { slug: "travel", name: "Travel" },
-  { slug: "ready-to-wear", name: "Ready-to-Wear" },
+  { slug: "ready-to-wear", name: "Clothing" },
   { slug: "accessories", name: "Accessories" },
 ];
 

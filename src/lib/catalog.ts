@@ -87,9 +87,9 @@ export const story = {
 export const campaigns: Campaign[] = [
   {
     category: "ready-to-wear",
-    eyebrow: "Ready-to-Wear",
+    eyebrow: "Clothing",
     title: "The new silhouettes",
-    cta: "Shop ready-to-wear",
+    cta: "Shop clothing",
     image: unsplash("1509631179647-0177331693ae"),
     imageAlt: "Woman in striped wide-leg trousers posing against a green wall",
   },

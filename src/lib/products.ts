@@ -197,6 +197,15 @@ export async function getCategoryProducts(
     .orderBy(asc(products.id));
 }
 
+// The whole live catalogue, for /search before anything is typed.
+export async function getAllProducts(): Promise<Product[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("products");
+
+  return selectProducts().orderBy(asc(products.id));
+}
+
 // Every word must appear in the name, colour, category, reference, description
 // or details. Name matches rank first.
 export async function searchProducts(query: string): Promise<Product[]> {
