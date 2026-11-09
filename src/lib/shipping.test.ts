@@ -27,7 +27,7 @@ describe("delivery zones", () => {
   test("builds Stripe rates in the store currency with estimates", () => {
     const [standard, nextDay] = shippingOptions(findCountry("GB")!, "gbp");
     assert.deepEqual(standard.shipping_rate_data?.fixed_amount, { amount: 0, currency: "gbp" });
-    assert.equal(nextDay.shipping_rate_data?.fixed_amount?.amount, 1000);
+    assert.equal(nextDay.shipping_rate_data?.fixed_amount?.amount, 1500);
     assert.deepEqual(nextDay.shipping_rate_data?.delivery_estimate?.maximum, {
       unit: "business_day",
       value: 1,
