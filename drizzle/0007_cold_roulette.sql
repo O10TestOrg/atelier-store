@@ -15,7 +15,7 @@ ALTER TABLE "products" ADD COLUMN "status" text DEFAULT 'draft' NOT NULL;--> sta
 ALTER TABLE "products" ADD COLUMN "published_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "products" ADD COLUMN "version" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 -- Products that existed before statuses were already live: keep them in the store.
-UPDATE "products" SET "status" = 'active', "published_at" = "created_at";--> statement-breakpoint
+UPDATE "products" SET "status" = 'active', "published_at" = "created_at" WHERE "published_at" IS NULL;--> statement-breakpoint
 CREATE INDEX "admin_events_entity_idx" ON "admin_events" USING btree ("entity","entity_id","created_at");--> statement-breakpoint
 CREATE INDEX "admin_events_created_at_idx" ON "admin_events" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "orders_attention_idx" ON "orders" USING btree ("created_at") WHERE "orders"."attention_reason" is not null;--> statement-breakpoint
