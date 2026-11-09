@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AdminPager, AdminSearch, listHref, param } from "@/components/admin/list-controls";
 import { OrderStatus } from "@/components/order-status";
+import { OrderItemThumbs } from "@/components/product-thumb";
 import { Notice, SignalIcon } from "@/components/signal";
 import { formatPrice } from "@/lib/catalog";
 import {
@@ -165,7 +166,12 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
                         </p>
                       )}
                     </td>
-                    <td className="py-4 pr-4 text-right tabular-nums">{itemCount}</td>
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center justify-end gap-3">
+                        <OrderItemThumbs items={order.items} />
+                        <span className="tabular-nums">{itemCount}</span>
+                      </div>
+                    </td>
                     <td className="py-4 text-right tabular-nums">{formatPrice(order.total, order.currency)}</td>
                   </tr>
                 );

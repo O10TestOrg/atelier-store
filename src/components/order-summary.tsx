@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ProductThumb } from "@/components/product-thumb";
 import { formatPrice } from "@/lib/catalog";
 import type { Order } from "@/lib/orders";
 
@@ -11,8 +12,9 @@ export function OrderSummary({ order }: { order: Order }) {
     <>
       <ul className="border-t">
         {order.items.map((item) => (
-          <li key={item.id} className="flex justify-between gap-6 border-b py-4 text-body-sm">
-            <div className="min-w-0">
+          <li key={item.id} className="flex gap-4 border-b py-4 text-body-sm">
+            <ProductThumb image={item.product?.image} className="w-14" sizes="4rem" />
+            <div className="min-w-0 flex-1">
               <Link href={`/products/${item.slug}`} className="link-quiet">
                 {item.name}
               </Link>
