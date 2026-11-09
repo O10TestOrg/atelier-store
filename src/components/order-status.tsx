@@ -4,7 +4,7 @@ import type { Order } from "@/lib/orders";
 const states = {
   paid: { label: "Confirmed", dot: "bg-success" },
   pending: { label: "Payment processing", dot: "bg-warning" },
-  unpaid: { label: "Not paid", dot: "border border-muted" },
+  unpaid: { label: "Not paid", dot: "bg-change" },
 };
 
 // Staff see the exact status, including checkouts customers never see.
@@ -12,8 +12,8 @@ const adminStates: Record<Order["status"], { label: string; dot: string }> = {
   paid: { label: "Paid", dot: "bg-success" },
   pending: { label: "Pending", dot: "bg-warning" },
   failed: { label: "Payment failed", dot: "bg-danger" },
-  expired: { label: "Expired", dot: "border border-muted" },
-  canceled: { label: "Canceled", dot: "border border-muted" },
+  expired: { label: "Expired", dot: "bg-change" },
+  canceled: { label: "Canceled", dot: "bg-change" },
 };
 
 export function orderState(order: Pick<Order, "status">) {

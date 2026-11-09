@@ -3,7 +3,7 @@ import type { ProductStatus as Status } from "@/db/schema";
 // Same dot + label pattern as OrderStatus.
 const states: Record<Status, { label: string; dot: string }> = {
   active: { label: "Live", dot: "bg-success" },
-  draft: { label: "Draft", dot: "border border-muted" },
+  draft: { label: "Draft", dot: "bg-change" },
   archived: { label: "Archived", dot: "bg-muted" },
 };
 
