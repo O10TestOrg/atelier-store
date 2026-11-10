@@ -9,13 +9,16 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { auth } from "@/lib/auth";
+import { toRole, type UserRole } from "@/lib/roles";
 
 export type CurrentUser = {
   id: string;
   name: string;
   email: string;
   emailVerified: boolean;
-  role: "customer" | "admin";
+  // A viewer sees the admin area but can't change anything (the public demo
+  // account). Writes still need `admin`.
+  role: UserRole;
   createdAt: Date;
 };
 
@@ -31,7 +34,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     name,
     email,
     emailVerified,
-    role: role === "admin" ? "admin" : "customer",
+    role: toRole(role),
     createdAt: new Date(createdAt),
   };
 });
@@ -42,11 +45,19 @@ export async function requireUser(returnTo = "/account") {
   return user;
 }
 
-// Non-admins get a 404 rather than a 403, so the admin area isn't advertised.
+// For admin pages, which only read: viewers pass too. Everyone else gets a
+// 404 rather than a 403, so the admin area isn't advertised.
 export async function requireAdmin(returnTo = "/admin") {
   const user = await requireUser(returnTo);
-  if (user.role !== "admin") notFound();
+  if (user.role !== "admin" && user.role !== "viewer") notFound();
   return user;
+}
+
+// Admin actions call this before `assertAdmin()` and return `READ_ONLY`, so a
+// viewer gets a message instead of the error page. `assertAdmin()` still
+// refuses them on its own.
+export async function isViewer() {
+  return (await getCurrentUser())?.role === "viewer";
 }
 
 export class AuthorizationError extends Error {
@@ -57,8 +68,8 @@ export class AuthorizationError extends Error {
 }
 
 // For admin Server Actions and Route Handlers: call it first, before reading
-// input or touching data. Throws instead of redirecting, so a forged request
-// fails outright.
+// input or touching data. Admins only; viewers are refused. Throws instead of
+// redirecting, so a forged request fails outright.
 export async function assertAdmin() {
   const user = await getCurrentUser();
   if (user?.role !== "admin") throw new AuthorizationError();

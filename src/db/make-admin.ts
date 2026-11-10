@@ -1,5 +1,6 @@
 // Gives an existing user the admin role. Run with `pnpm db:make-admin <email>`.
-// Pass `--revoke` to demote them back to customer.
+// Pass `--revoke` to demote them back to customer, or `--viewer` to make them
+// a read-only viewer (the public demo login).
 //
 // This is the way in for the first admin and the break-glass for a
 // compromised one, so unlike /admin/customers it skips the rules: it can
@@ -14,12 +15,13 @@ loadEnvConfig(process.cwd());
 async function main() {
   const args = process.argv.slice(2);
   const revoke = args.includes("--revoke");
+  const viewer = args.includes("--viewer");
   const email = args.find((arg) => !arg.startsWith("--"));
-  if (!email) throw new Error("Usage: pnpm db:make-admin <email> [--revoke]");
+  if (!email) throw new Error("Usage: pnpm db:make-admin <email> [--revoke | --viewer]");
 
   // Imported after the env is loaded, since `db` reads DATABASE_URL on import.
   const { db } = await import("./index");
-  const role = revoke ? "customer" : "admin";
+  const role = revoke ? "customer" : viewer ? "viewer" : "admin";
 
   const updated = await db
     .update(user)

@@ -3,8 +3,8 @@
 import { refresh } from "next/cache";
 import { isOrderId } from "@/lib/ids";
 import { getAdminOrder, resolveOrderAttention } from "@/features/orders/orders";
-import type { AdminActionResult } from "@/features/admin/product-form";
-import { assertAdmin } from "@/lib/session";
+import { READ_ONLY, type AdminActionResult } from "@/features/admin/product-form";
+import { assertAdmin, isViewer } from "@/lib/session";
 
 // Orders stay read-only: their status only moves through Stripe. This only
 // clears the "needs attention" flag once a person has dealt with the payment.
@@ -17,6 +17,7 @@ export async function markAttentionResolved(
   _previous: AdminActionResult,
   formData: FormData,
 ): Promise<AdminActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (!isOrderId(orderId)) {
     return { ok: false, message: "Something went wrong. Please try again." };

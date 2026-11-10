@@ -12,6 +12,7 @@ import { Notice } from "@/components/signal";
 import { getEntityHistory } from "@/features/admin/admin-events";
 import { formatDateTime } from "@/lib/dates";
 import { getAdminOrder, orderReference } from "@/features/orders/orders";
+import { displayEmail, isDemoEmail } from "@/lib/roles";
 import { requireAdmin } from "@/lib/session";
 import { stripePaymentUrl } from "@/lib/stripe";
 import { ArrowLeftIcon } from "@/components/icons";
@@ -37,7 +38,8 @@ export default function AdminOrderPage({ params }: PageProps<"/admin/orders/[id]
 
 async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "params">) {
   const { id } = await params;
-  await requireAdmin(`/admin/orders/${encodeURIComponent(id)}`);
+  const { role } = await requireAdmin(`/admin/orders/${encodeURIComponent(id)}`);
+  const viewer = role === "viewer";
   const order = await getAdminOrder(id);
   if (!order) notFound();
   const history = await getEntityHistory("order", order.id);
@@ -91,13 +93,16 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
             {order.user ? (
               <>
                 {order.user.name}
-                <p className="mt-1 break-all text-meta">{order.user.email}</p>
+                <p className="mt-1 break-all text-meta">{displayEmail(order.user.email, viewer)}</p>
               </>
             ) : (
               "Guest"
             )}
           </Row>
-          {order.email && (
+          {order.email && viewer && !isDemoEmail(order.email) && (
+            <Row label="Receipt email">{displayEmail(order.email, viewer)}</Row>
+          )}
+          {order.email && (!viewer || isDemoEmail(order.email)) && (
             <Row label="Receipt email">
               <a href={`mailto:${order.email}`} className="link-quiet break-all">
                 {order.email}
@@ -114,7 +119,11 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
           )}
           {order.shippingAddress && (
             <Row label="Delivering to">
-              <OrderAddress order={order} />
+              {viewer && !isDemoEmail(order.email ?? order.user?.email) ? (
+                <span className="text-muted">Hidden on the demo account</span>
+              ) : (
+                <OrderAddress order={order} />
+              )}
             </Row>
           )}
           <Row label="Order id">
@@ -157,7 +166,7 @@ async function OrderDetail({ params }: Pick<PageProps<"/admin/orders/[id]">, "pa
           <h2 id="order-history" className="mb-6 text-heading-sm">
             History
           </h2>
-          <HistoryList events={history} categoryNames={new Map()} />
+          <HistoryList events={history} categoryNames={new Map()} viewer={viewer} />
         </section>
       )}
     </>

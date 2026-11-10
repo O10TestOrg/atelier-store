@@ -17,6 +17,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { adminEventAreas } from "../lib/admin-event-kinds";
 import type { FieldChanges } from "../lib/field-changes";
+import { userRoles } from "../lib/roles";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -101,13 +102,13 @@ export const user = pgTable(
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
-    role: text("role", { enum: ["customer", "admin"] })
+    role: text("role", { enum: userRoles })
       .notNull()
       .default("customer"),
     ...timestamps,
   },
   (table) => [
-    check("user_role_check", sql`${table.role} in ('customer', 'admin')`),
+    check("user_role_check", sql`${table.role} in ('customer', 'viewer', 'admin')`),
   ],
 );
 

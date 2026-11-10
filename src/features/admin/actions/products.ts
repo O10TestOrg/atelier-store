@@ -7,6 +7,7 @@ import { productStatuses, type ProductStatus } from "@/db/schema";
 import { FOREIGN_KEY_VIOLATION, UNIQUE_VIOLATION, pgError } from "@/lib/db-errors";
 import { BIG_PRICE_CHANGE, diffFields, priceChangeRatio } from "@/lib/field-changes";
 import {
+  READ_ONLY,
   isValidId,
   parseInteger,
   parseProductForm,
@@ -25,7 +26,7 @@ import {
   updateProductDetails,
 } from "@/features/catalog/products";
 import { sendRestockAlerts } from "@/features/restock-alerts/restock-alerts";
-import { assertAdmin } from "@/lib/session";
+import { assertAdmin, isViewer } from "@/lib/session";
 import { getUploadHost } from "@/lib/uploads";
 
 // Server Actions are public endpoints, whatever page renders them: each one
@@ -63,6 +64,7 @@ export async function createProduct(
   _previous: ProductActionResult,
   formData: FormData,
 ): Promise<ProductActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
 
   const parsed = parseProductForm(formData, "create", { uploadHost: getUploadHost() });
@@ -89,6 +91,7 @@ export async function updateProduct(
   _previous: ProductActionResult,
   formData: FormData,
 ): Promise<ProductActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (!isValidId(id)) return { ok: false, message: GENERIC_ERROR };
   const version = parseInteger(formData.get("version"));
@@ -146,6 +149,7 @@ export async function updateStock(
   _previous: StockActionResult,
   formData: FormData,
 ): Promise<StockActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (!isValidId(id)) return { ok: false, message: GENERIC_ERROR };
 
@@ -192,6 +196,7 @@ export async function changeProductStatus(
   id: number,
   to: ProductStatus,
 ): Promise<AdminActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (!isValidId(id) || !isProductStatus(to) || to === "draft") {
     return { ok: false, message: GENERIC_ERROR };
@@ -218,6 +223,7 @@ export async function changeProductStatus(
 // Permanent delete, for drafts and archived products no order includes (test
 // pieces, duplicates). The statement re-checks both conditions.
 export async function deleteProduct(id: number): Promise<AdminActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (!isValidId(id)) return { ok: false, message: GENERIC_ERROR };
 

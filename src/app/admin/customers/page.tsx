@@ -14,6 +14,7 @@ import {
 import { SignalIcon } from "@/components/signal";
 import { ADMIN_CUSTOMERS_PER_PAGE, getAdminCustomers, type Role } from "@/features/admin/customers";
 import { formatShortDate } from "@/lib/dates";
+import { displayEmail, isDemoEmail } from "@/lib/roles";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -24,7 +25,10 @@ const roleFilters: { value: Role | undefined; label: string }[] = [
   { value: undefined, label: "Everyone" },
   { value: "customer", label: "Customers" },
   { value: "admin", label: "Admins" },
+  { value: "viewer", label: "Viewers" },
 ];
+
+const roleLabels: Record<Role, string> = { customer: "Customer", viewer: "Viewer", admin: "Admin" };
 
 export default function AdminCustomersPage({ searchParams }: PageProps<"/admin/customers">) {
   return (
@@ -46,6 +50,7 @@ export default function AdminCustomersPage({ searchParams }: PageProps<"/admin/c
 
 async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">, "searchParams">) {
   const admin = await requireAdmin("/admin/customers");
+  const viewer = admin.role === "viewer";
 
   const params = await searchParams;
   const roleParam = param(params.role);
@@ -106,7 +111,9 @@ async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">
                     <th scope="row" className="max-w-72 py-4 pr-4 font-normal">
                       {customer.name}
                       {isSelf && <span className="text-muted"> (you)</span>}
-                      <p className="mt-1 break-all text-meta">{customer.email}</p>
+                      <p className="mt-1 break-all text-meta">
+                        {displayEmail(customer.email, viewer)}
+                      </p>
                       {!customer.emailVerified && (
                         <p className="mt-1 flex items-center gap-1.5 text-caption">
                           <SignalIcon tone="warning" size="caption" />
@@ -120,7 +127,9 @@ async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">
                       </time>
                     </td>
                     <td className="py-4 pr-4 text-right tabular-nums">
-                      {customer.orderCount > 0 ? (
+                      {customer.orderCount > 0 && viewer && !isDemoEmail(customer.email) ? (
+                        customer.orderCount
+                      ) : customer.orderCount > 0 ? (
                         <Link
                           href={listHref("/admin/orders", { status: "all", q: customer.email })}
                           className="link-quiet"
@@ -132,13 +141,13 @@ async function CustomerList({ searchParams }: Pick<PageProps<"/admin/customers">
                         <span className="text-muted">0</span>
                       )}
                     </td>
-                    <td className="py-4 pr-4">{customer.role === "admin" ? "Admin" : "Customer"}</td>
+                    <td className="py-4 pr-4">{roleLabels[customer.role]}</td>
                     <td className="max-w-80 py-3">
-                      {!isSelf && (
+                      {!isSelf && customer.role !== "viewer" && (
                         <RoleControl
                           id={customer.id}
                           name={customer.name}
-                          email={customer.email}
+                          email={displayEmail(customer.email, viewer)}
                           role={customer.role}
                           verified={customer.emailVerified}
                         />

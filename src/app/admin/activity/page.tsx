@@ -56,7 +56,7 @@ export default function AdminActivityPage({ searchParams }: PageProps<"/admin/ac
 }
 
 async function Activity({ searchParams }: Pick<PageProps<"/admin/activity">, "searchParams">) {
-  await requireAdmin("/admin/activity");
+  const { role } = await requireAdmin("/admin/activity");
 
   const params = await searchParams;
   const kindParam = param(params.kind);
@@ -116,6 +116,7 @@ async function Activity({ searchParams }: Pick<PageProps<"/admin/activity">, "se
           events={events}
           categoryNames={new Map(categories.map((c) => [c.id, c.name]))}
           showEntity
+          viewer={role === "viewer"}
           empty={filtered ? "No changes match these filters." : undefined}
         />
       </div>

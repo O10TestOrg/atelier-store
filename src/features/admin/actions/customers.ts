@@ -2,8 +2,8 @@
 
 import { refresh } from "next/cache";
 import { getAccountRole, setAccountRole, type Role } from "@/features/admin/customers";
-import type { AdminActionResult } from "@/features/admin/product-form";
-import { assertAdmin } from "@/lib/session";
+import { READ_ONLY, type AdminActionResult } from "@/features/admin/product-form";
+import { assertAdmin, isViewer } from "@/lib/session";
 
 // Same rules as the other admin actions: check the role first, then validate.
 // `setAccountRole` enforces the safety rules in SQL; the checks here only
@@ -13,6 +13,7 @@ const GENERIC_ERROR = "Something went wrong. Please try again.";
 
 // Bound to the account id and the role to give it; both are re-checked.
 export async function changeRole(id: string, role: Role): Promise<AdminActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (typeof id !== "string" || !id || (role !== "admin" && role !== "customer")) {
     return { ok: false, message: GENERIC_ERROR };

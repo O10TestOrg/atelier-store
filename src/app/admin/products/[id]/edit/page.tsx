@@ -51,7 +51,7 @@ async function EditProduct({
   searchParams,
 }: Pick<PageProps<"/admin/products/[id]/edit">, "params" | "searchParams">) {
   const { id: rawId } = await params;
-  await requireAdmin(`/admin/products/${encodeURIComponent(rawId)}/edit`);
+  const { role } = await requireAdmin(`/admin/products/${encodeURIComponent(rawId)}/edit`);
 
   const id = parseInteger(rawId);
   if (!isValidId(id)) notFound();
@@ -128,6 +128,7 @@ async function EditProduct({
         <HistoryList
           events={history}
           categoryNames={new Map(categories.map((c) => [c.id, c.name]))}
+          viewer={role === "viewer"}
         />
       </section>
     </>
