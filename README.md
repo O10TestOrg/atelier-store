@@ -1,5 +1,16 @@
 # Atelier
 
+> [!CAUTION]
+> **This is an experimental demo, not a production-ready store.** I built it to try out AI-assisted development, taking inspiration from a video tutorial. Review it carefully before you use any of it in production.
+>
+> **How AI was used:** most of the code was written with [Claude Code](https://claude.com/claude-code), following a structured workflow rather than one-shot prompting:
+>
+> - The project rules, architecture and gotchas are written down in [CLAUDE.md](CLAUDE.md), and the agent works from them.
+> - Agent skills guided specific areas: the official Better Auth and Neon skills, plus a project `build-ui` skill for storefront UI.
+> - Each feature or fix went on its own branch and was merged through a pull request.
+> - Audits of technical integrity, customer experience, features and docs produced numbered findings, which were then fixed in separate PRs.
+> - Changes were verified with lint, type checks, tests and a production build.
+
 An online fashion store for a UK boutique: browse the catalogue, save pieces, pay through Stripe-hosted Checkout as a guest or with an account, and run the shop from a built-in admin area.
 
 ![Next.js 16](https://img.shields.io/badge/Next.js-16.4-000000?logo=nextdotjs)
@@ -31,8 +42,6 @@ An online fashion store for a UK boutique: browse the catalogue, save pieces, pa
 - [Testing and quality checks](#testing-and-quality-checks)
 - [Project structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Features
 
@@ -371,7 +380,7 @@ atelier-store/
 │   │   ├── seed.ts           # pnpm db:seed
 │   │   └── make-admin.ts     # pnpm db:make-admin
 │   └── proxy.ts              # Route interception (replaces middleware.ts in Next 16)
-├── .env.example              # Every environment variable, with comments
+├── .env.example              # Every environment variable
 ├── drizzle.config.ts
 ├── next.config.ts            # Cache Components, image hosts, security headers
 ├── CLAUDE.md                 # Contributor conventions and architecture rules
@@ -452,15 +461,3 @@ APP_URL="http://localhost:3001"
 ### `pnpm install` says build scripts were ignored
 
 This is expected. `pnpm-workspace.yaml` deliberately doesn't run the install scripts for `sharp`, `esbuild` and `unrs-resolver`, and nothing in the workflow above needs them.
-
-## Contributing
-
-1. Branch off `main` for every piece of work: `feat/<topic>` for features, `fix/<topic>` for fixes.
-2. Read [CLAUDE.md](CLAUDE.md) for the rules that keep checkout, stock and admin safe, such as re-pricing on the server and checking ownership in queries.
-3. Change the schema only in `src/db/schema.ts`, then run `pnpm db:generate` and commit the new migration in `./drizzle`.
-4. Run `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`, and make sure they all pass.
-5. Open a pull request against `main` describing what changed and how you checked it.
-
-## License
-
-No license has been chosen yet, so all rights are reserved by default. Add a `LICENSE` file before accepting outside contributions or publishing the code.
