@@ -7,7 +7,6 @@
 >
 > - The project rules, architecture and gotchas are written down in [CLAUDE.md](CLAUDE.md), and the agent works from them.
 > - Agent skills guided specific areas: the official Better Auth and Neon skills, plus a project `build-ui` skill for storefront UI.
-> - Each feature or fix went on its own branch and was merged through a pull request.
 > - Audits of technical integrity, customer experience, features and docs produced numbered findings, which were then fixed in separate PRs.
 > - Changes were verified with lint, type checks, tests and a production build.
 
