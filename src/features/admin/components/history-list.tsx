@@ -10,6 +10,7 @@ import {
   TrashIcon,
 } from "@/components/icons";
 import { adminEventKind, type AdminEventKind } from "@/lib/admin-event-kinds";
+import { displayEmail } from "@/lib/roles";
 import type { AdminEvent } from "@/features/admin/admin-events";
 import { formatPrice } from "@/features/catalog/catalog";
 import { STORE_TIME_ZONE as timeZone } from "@/lib/dates";
@@ -140,11 +141,22 @@ function groupByDay(events: AdminEvent[]) {
   return days;
 }
 
+function maskEvent(event: AdminEvent): AdminEvent {
+  return {
+    ...event,
+    actorEmail: displayEmail(event.actorEmail, true),
+    label: event.entity === "user" ? displayEmail(event.label, true) : event.label,
+  };
+}
+
 type Props = {
   events: AdminEvent[];
   categoryNames: Map<number, string>;
   // On the activity page each row also names and links what changed.
   showEntity?: boolean;
+  // Masks admins' addresses, and the customer named in a role change, for the
+  // read-only demo login.
+  viewer?: boolean;
   empty?: string;
 };
 
@@ -153,7 +165,10 @@ export function HistoryList({
   categoryNames,
   showEntity = false,
   empty = "No changes recorded yet.",
+  viewer = false,
 }: Props) {
+  if (viewer) events = events.map((event) => maskEvent(event));
+
   if (events.length === 0) {
     return <p className="border-t pt-6 text-muted">{empty}</p>;
   }

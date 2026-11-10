@@ -74,6 +74,12 @@ export type AdminActionResult<F extends string = never> = {
   fieldErrors?: FieldErrors<F>;
 } | null;
 
+// What every admin action returns to a viewer (the read-only demo login).
+export const READ_ONLY = {
+  ok: false,
+  message: "This is a read-only demo account, so changes aren’t saved.",
+} as const;
+
 type Parsed<T, F extends string> =
   | { ok: true; data: T }
   | { ok: false; fieldErrors: FieldErrors<F> };

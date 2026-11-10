@@ -196,6 +196,9 @@ Next.js loads `.env.local`, then `.env`, from the project root. The `db:*` scrip
 | `EMAIL_FROM` | In production | none | A sender on a domain verified in Resend, e.g. `Atelier <orders@yourdomain.com>`. |
 | `BLOB_READ_WRITE_TOKEN` | No | none | A Vercel Blob read-write token for photo uploads in `/admin`. **Read at build time**, so rebuild after setting it. Unset, uploads are off and images must be Unsplash URLs. |
 | `CLIENT_SERVICES_EMAIL` | No | `clientservices@atelier.example` | The contact and reply-to address shown on `/help/contact` and in emails. **Read at build time.** |
+| `NEXT_PUBLIC_DEMO_MODE` | No | none | `1` shows the demo banner (Stripe test card and the read-only admin login) on every page. **Read at build time.** See [Public demo](#public-demo). |
+| `DEMO_VIEWER_EMAIL` | No | `demo@atelier.example` | The read-only admin login that `pnpm db:seed-demo` creates and the banner shows. **Read at build time.** |
+| `DEMO_VIEWER_PASSWORD` | For `db:seed-demo` | none | Its password (8+ characters). It's public on the demo, so don't reuse a real one. **Read at build time.** |
 
 <details>
 <summary>A minimal <code>.env.local</code> for local development</summary>
@@ -260,6 +263,7 @@ Sign up in the app, then give the account the admin role:
 ```bash
 pnpm db:make-admin you@example.com
 pnpm db:make-admin you@example.com --revoke   # remove it again
+pnpm db:make-admin you@example.com --viewer   # read-only admin
 ```
 
 Reload the page and open <http://localhost:3000/admin>.
@@ -274,6 +278,8 @@ Reload the page and open <http://localhost:3000/admin>.
 
 > [!NOTE]
 > After the first admin, roles can also be changed on `/admin/customers`, which refuses to change your own role or demote the last admin. `pnpm db:make-admin` skips those rules, so use it to remove a compromised admin when nobody else can sign in.
+
+A **viewer** can open every admin page but can't change anything: every save says the account is read-only, uploads are refused, and so are changes to the account itself (name, email, password, deletion), so a shared login can't be locked. Viewers also see customers' real email addresses masked (`j•••@gmail.com`) and their delivery addresses hidden, except for the made-up `@atelier.example` demo data.
 
 To upload product photos instead of pasting Unsplash URLs, create a Vercel Blob store, set `BLOB_READ_WRITE_TOKEN`, and restart or rebuild.
 
@@ -314,7 +320,26 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.example/api/cro
 # {"released":0}
 ```
 
-It releases stock held by checkouts Stripe never reported back on, sends due back-in-stock emails, and prunes old rows. Vercel Cron sends the `Authorization` header itself. There's no `vercel.json` yet, so add the schedule in your host's settings.
+It releases stock held by checkouts Stripe never reported back on, sends due back-in-stock emails, and prunes old rows. Vercel Cron sends the `Authorization` header itself.
+
+`vercel.json` schedules it once a day at 03:00 UTC, which is as often as the Vercel Hobby plan allows. On Pro, change the schedule to `*/10 * * * *`. On Hobby, also call it every 10 minutes from a free external scheduler (for example cron-job.org) with the `Authorization: Bearer <CRON_SECRET>` header. Webhooks and the lazy sweep after each checkout cover most holds in between.
+
+### Public demo
+
+To run the store as a public showcase, with a read-only admin login visitors can use:
+
+1. Migrate and seed the database, then add the demo data. It adds customers, orders in every state (including one under "Needs attention" and an early USD order), back-in-stock requests, drafts, a low-stock and an archived product, a store manager's change history, and the `viewer` login:
+
+   ```bash
+   pnpm db:migrate && pnpm db:seed
+   DEMO_VIEWER_PASSWORD="pick-a-throwaway-password" pnpm db:seed-demo
+   ```
+
+2. Use Stripe **test-mode** keys only, and add a webhook endpoint in the Stripe Dashboard for `https://<your-domain>/api/stripe/webhook` with the four `checkout.session.*` events listed above.
+3. On Vercel, set the variables from [Configuration](#configuration), plus `NEXT_PUBLIC_DEMO_MODE=1`, `DEMO_VIEWER_EMAIL` and `DEMO_VIEWER_PASSWORD` (the same values as step 1). Set `APP_URL` and `BETTER_AUTH_URL` to the production domain.
+4. Consider leaving `BLOB_READ_WRITE_TOKEN` and `RESEND_API_KEY` unset on the demo, so nobody can upload files or trigger emails. Sign-up still works, because email verification is soft.
+
+Re-run `pnpm db:seed-demo` whenever you like. It skips what already exists and moves the history dates up to the present. Real visitors' sign-ups and test orders stay until you remove them.
 
 ### Database scripts
 
@@ -325,7 +350,8 @@ It releases stock held by checkouts Stripe never reported back on, sends due bac
 | `pnpm db:push` | Syncs the schema straight to the database. For quick local experiments only. |
 | `pnpm db:studio` | Opens Drizzle Studio to browse the data. |
 | `pnpm db:seed` | Upserts the sample catalogue. Safe to re-run. |
-| `pnpm db:make-admin <email> [--revoke]` | Grants or removes the admin role. |
+| `pnpm db:seed-demo` | Adds the [public demo](#public-demo) data and the read-only `viewer` login. Needs `DEMO_VIEWER_PASSWORD`. Safe to re-run. |
+| `pnpm db:make-admin <email> [--revoke \| --viewer]` | Grants or removes the admin role, or makes the account a read-only viewer. |
 
 ## Testing and quality checks
 
@@ -377,6 +403,7 @@ atelier-store/
 │   │   ├── schema.ts         # Single source of truth for every table
 │   │   ├── index.ts          # Drizzle client (neon-http)
 │   │   ├── seed.ts           # pnpm db:seed
+│   │   ├── seed-demo.ts      # pnpm db:seed-demo
 │   │   └── make-admin.ts     # pnpm db:make-admin
 │   └── proxy.ts              # Route interception (replaces middleware.ts in Next 16)
 ├── .env.example              # Every environment variable

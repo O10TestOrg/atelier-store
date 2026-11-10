@@ -8,13 +8,14 @@ import {
   pgError,
 } from "@/lib/db-errors";
 import {
+  READ_ONLY,
   isValidId,
   parseCategoryName,
   parseCategorySlug,
   type AdminActionResult,
 } from "@/features/admin/product-form";
 import { deleteCategory, insertCategory, renameCategory } from "@/features/catalog/products";
-import { assertAdmin } from "@/lib/session";
+import { assertAdmin, isViewer } from "@/lib/session";
 
 // Same rules as the product actions: check the role first, then validate.
 
@@ -26,6 +27,7 @@ export async function createCategory(
   _previous: CategoryActionResult,
   formData: FormData,
 ): Promise<CategoryActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
 
   const { name, error: nameError } = parseCategoryName(formData.get("name"));
@@ -60,6 +62,7 @@ export async function updateCategoryName(
   _previous: CategoryActionResult,
   formData: FormData,
 ): Promise<CategoryActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (!isValidId(id)) return { ok: false, message: GENERIC_ERROR };
 
@@ -80,6 +83,7 @@ export async function updateCategoryName(
 
 // Bound to `id`; the previous state useActionState passes is ignored.
 export async function removeCategory(id: number): Promise<CategoryActionResult> {
+  if (await isViewer()) return READ_ONLY;
   const admin = await assertAdmin();
   if (!isValidId(id)) return { ok: false, message: GENERIC_ERROR };
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/session";
 import { ArrowRightIcon } from "@/components/icons";
+import { Notice } from "@/components/signal";
 
 export const metadata: Metadata = {
   title: { absolute: "Admin | Atelier" },
@@ -55,6 +56,14 @@ async function AdminOverview() {
         <h1 className="mt-4 text-heading">Overview</h1>
         <p className="mt-4 text-muted">Signed in as {admin.email}.</p>
       </header>
+      {admin.role === "viewer" && (
+        <Notice tone="info" className="mt-8">
+          <p className="max-w-prose">
+            This is a read-only demo account. Look around and try the forms: nothing you
+            save is kept, and customers’ real addresses are hidden.
+          </p>
+        </Notice>
+      )}
       <ul className="mt-10 grid gap-px border bg-line sm:grid-cols-2 xl:grid-cols-3">
         {sections.map((section) => (
           <li key={section.href} className="bg-background">

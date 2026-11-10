@@ -1,12 +1,13 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/features/account/account-fields";
 import { vercelAuthHosts } from "@/lib/app-url";
+import { userRoles } from "@/lib/roles";
 import { WISHLIST_COOKIE, parseWishlist } from "@/lib/cookies";
 import { composeEmail, sendEmail } from "@/lib/email";
 import { claimGuestOrders } from "@/features/orders/orders";
@@ -15,6 +16,18 @@ import {
   getUserWishlistSlugs,
   wishlistCookieOptions,
 } from "@/features/wishlist/wishlist";
+
+// Everything that changes or removes the signed-in account. The demo viewer's
+// login is public, so these are refused for viewers: nobody can lock it.
+const ACCOUNT_CHANGE_PATHS = new Set([
+  "/update-user",
+  "/change-email",
+  "/change-password",
+  "/delete-user",
+  "/revoke-session",
+  "/revoke-sessions",
+  "/revoke-other-sessions",
+]);
 
 // BETTER_AUTH_SECRET and BETTER_AUTH_URL are read from the environment. On
 // Vercel the base URL follows the request host, limited to this deployment's
@@ -71,8 +84,10 @@ export const auth = betterAuth({
       enabled: true,
       // Admins are demoted on /admin/customers (never the last one) before
       // their account can go, so the store can't lose its last admin here.
+      // Viewers are refused earlier too (`hooks.before`).
       beforeDelete: async (user) => {
-        if ((user as { role?: string }).role === "admin") {
+        const role = (user as { role?: string }).role;
+        if (role === "admin" || role === "viewer") {
           throw new APIError("BAD_REQUEST", { message: "Admin accounts can't be deleted here." });
         }
       },
@@ -80,9 +95,9 @@ export const auth = betterAuth({
     additionalFields: {
       // `input: false` keeps clients from choosing their own role at sign-up.
       // Admins grant it on /admin/customers; `pnpm db:make-admin <email>`
-      // bootstraps the first one.
+      // bootstraps the first one (`--viewer` for the read-only demo login).
       role: {
-        type: ["customer", "admin"],
+        type: [...userRoles],
         required: false,
         defaultValue: "customer",
         input: false,
@@ -110,6 +125,13 @@ export const auth = betterAuth({
   // its timing doesn't reveal whether an address has an account.
   advanced: { backgroundTasks: { handler: (task) => after(task) } },
   hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (!ACCOUNT_CHANGE_PATHS.has(ctx.path)) return;
+      const session = await getSessionFromCtx(ctx);
+      if ((session?.user as { role?: string } | undefined)?.role === "viewer") {
+        throw new APIError("FORBIDDEN", { message: "The demo account can’t be changed." });
+      }
+    }),
     // Merges what a guest saved into the account they sign in or up to, then
     // rewrites the cookie from the account, so pieces saved elsewhere show too.
     // Guest orders placed since the email was verified join the account here.

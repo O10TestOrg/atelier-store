@@ -22,6 +22,7 @@ import {
   orderReference,
   type AdminOrderFilter,
 } from "@/features/orders/orders";
+import { displayEmail, isDemoEmail } from "@/lib/roles";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -65,7 +66,8 @@ export default function AdminOrdersPage({ searchParams }: PageProps<"/admin/orde
 }
 
 async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "searchParams">) {
-  await requireAdmin("/admin/orders");
+  const { role } = await requireAdmin("/admin/orders");
+  const viewer = role === "viewer";
 
   const params = await searchParams;
   const status = param(params.status);
@@ -146,7 +148,9 @@ async function OrderList({ searchParams }: Pick<PageProps<"/admin/orders">, "sea
                       </p>
                     </th>
                     <td className="max-w-64 py-4 pr-4">
-                      {customerEmail(order) ? (
+                      {viewer && !isDemoEmail(customerEmail(order)) && customerEmail(order) ? (
+                        <p className="break-all">{displayEmail(customerEmail(order), viewer)}</p>
+                      ) : customerEmail(order) ? (
                         <Link
                           href={ordersHref("all", 1, customerEmail(order))}
                           className="link-quiet break-all"

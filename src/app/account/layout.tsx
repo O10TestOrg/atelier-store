@@ -41,6 +41,6 @@ export default function AccountLayout({ children }: LayoutProps<"/account">) {
 
 async function AdminNavItem() {
   const user = await getCurrentUser();
-  if (user?.role !== "admin") return null;
+  if (user?.role !== "admin" && user?.role !== "viewer") return null;
   return <AccountNavItem href="/admin">Admin</AccountNavItem>;
 }
